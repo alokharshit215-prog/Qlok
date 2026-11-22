@@ -39,6 +39,7 @@ import androidx.compose.material.icons.automirrored.rounded.ViewList
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.AddLink
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Checklist
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Code
@@ -52,9 +53,11 @@ import androidx.compose.material.icons.rounded.DriveFileRenameOutline
 import androidx.compose.material.icons.rounded.FolderOff
 import androidx.compose.material.icons.rounded.FolderZip
 import androidx.compose.material.icons.rounded.GridView
+import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.InsertDriveFile
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.RadioButtonUnchecked
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.SelectAll
@@ -128,6 +131,7 @@ fun FilesBrowserScreen(
     onRefresh: () -> Unit,
     onSearchQueryChange: (String) -> Unit,
     onOpenGlobalSearch: () -> Unit,
+    onOpenRecentFiles: () -> Unit,
     onToggleViewMode: (ViewMode) -> Unit,
     onSortChange: (SortOption, SortDirection) -> Unit,
     onItemClick: (StorageItem) -> Unit,
@@ -156,14 +160,20 @@ fun FilesBrowserScreen(
     onContextFavorite: (StorageItem) -> Unit,
     onDropOntoFolder: (draggedPathOrUri: String, targetFolder: StorageItem, isMove: Boolean) -> Unit
 ) {
-    val isSelectionMode = selectedItems.isNotEmpty()
+    var manualSelectMode by remember { mutableStateOf(false) }
+    val isSelectionMode = manualSelectMode || selectedItems.isNotEmpty()
     var showSortMenu by remember { mutableStateOf(false) }
     var showSearchBar by remember { mutableStateOf(false) }
     var quickCreateExpanded by remember { mutableStateOf(false) }
     var pendingDropChoice by remember { mutableStateOf<Pair<String, StorageItem>?>(null) }
 
     BackHandler(enabled = isSelectionMode || breadcrumbs.size > 1) {
-        onNavigateUp()
+        if (isSelectionMode) {
+            manualSelectMode = false
+            onClearSelection()
+        } else {
+            onNavigateUp()
+        }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -172,16 +182,11 @@ fun FilesBrowserScreen(
             if (isSelectionMode) {
                 MultiSelectTopBar(
                     selectedCount = selectedItems.size,
-                    onClear = onClearSelection,
-                    onSelectAll = onSelectAll,
-                    onCopy = { onCopyItems(selectedItems.values.toList()) },
-                    onCut = { onCutItems(selectedItems.values.toList()) },
-                    onMove = { onMoveItems(selectedItems.values.toList()) },
-                    onDelete = { onDeleteItems(selectedItems.values.toList()) },
-                    onShare = { onShareItems(selectedItems.values.toList()) },
-                    onZip = { onCreateZip(selectedItems.values.toList()) },
-                    onBatchRename = { onBatchRename(selectedItems.values.toList()) },
-                    onFavorite = { onFavoriteSelected(selectedItems.values.toList()) }
+                    onClear = {
+                        manualSelectMode = false
+                        onClearSelection()
+                    },
+                    onSelectAll = onSelectAll
                 )
             } else {
                 Row(
@@ -191,8 +196,20 @@ fun FilesBrowserScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Files", style = MaterialTheme.typography.headlineMedium)
+                    Text("Files", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                     Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(
+                            onClick = { manualSelectMode = true },
+                            modifier = Modifier.testTag("files_select_mode_button")
+                        ) {
+                            Icon(Icons.Rounded.Checklist, contentDescription = "Select multiple files")
+                        }
+                        IconButton(
+                            onClick = onOpenRecentFiles,
+                            modifier = Modifier.testTag("files_recent_button")
+                        ) {
+                            Icon(Icons.Rounded.History, contentDescription = "Recent files")
+                        }
                         IconButton(onClick = { showSearchBar = !showSearchBar }) {
                             Icon(Icons.Rounded.Search, contentDescription = "Filter folder")
                         }
@@ -257,30 +274,34 @@ fun FilesBrowserScreen(
                 }
             }
 
-            // Storage Roots Selector Chips
-            if (roots.isNotEmpty()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
-                        .padding(horizontal = 16.dp, vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    roots.forEach { root ->
-                        FilterChip(
-                            selected = currentRoot?.id == root.id,
-                            onClick = { onSelectRoot(root) },
-                            label = { Text(root.label) }
-                        )
-                    }
+            // Storage Roots Selector Chips + Quick Recent Chip
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                FilterChip(
+                    selected = false,
+                    onClick = onOpenRecentFiles,
+                    leadingIcon = { Icon(Icons.Rounded.History, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                    label = { Text("Recent") }
+                )
+                roots.forEach { root ->
                     FilterChip(
-                        selected = false,
-                        onClick = onAddSafFolder,
-                        leadingIcon = { Icon(Icons.Rounded.AddLink, contentDescription = null, modifier = Modifier.size(16.dp)) },
-                        label = { Text("Add Folder") }
+                        selected = currentRoot?.id == root.id,
+                        onClick = { onSelectRoot(root) },
+                        label = { Text(root.label) }
                     )
                 }
+                FilterChip(
+                    selected = false,
+                    onClick = onAddSafFolder,
+                    leadingIcon = { Icon(Icons.Rounded.AddLink, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                    label = { Text("Add Folder") }
+                )
             }
 
             // Breadcrumb Trail
@@ -523,6 +544,7 @@ fun FilesBrowserScreen(
                                 FileGridItem(
                                     item = item,
                                     isSelected = isSelected,
+                                    isSelectionMode = isSelectionMode,
                                     onClick = {
                                         if (isSelectionMode) onToggleSelect(item) else onItemClick(item)
                                     },
@@ -535,8 +557,53 @@ fun FilesBrowserScreen(
             }
         }
 
-        // + Create Expandable Quick Menu FAB
-        if (uiState is BrowserUiState.Success || uiState is BrowserUiState.Error) {
+        // Bottom Multi-Select Action Bar OR + Create FAB
+        if (isSelectionMode) {
+            val selectedList = selectedItems.values.toList()
+            MultiSelectBottomActionBar(
+                selectedCount = selectedList.size,
+                onDelete = {
+                    manualSelectMode = false
+                    onDeleteItems(selectedList)
+                },
+                onRename = {
+                    if (selectedList.size == 1) {
+                        manualSelectMode = false
+                        onContextRename(selectedList.first())
+                    } else if (selectedList.size > 1) {
+                        manualSelectMode = false
+                        onBatchRename(selectedList)
+                    }
+                },
+                onCopy = {
+                    manualSelectMode = false
+                    onCopyItems(selectedList)
+                },
+                onCut = {
+                    manualSelectMode = false
+                    onCutItems(selectedList)
+                },
+                onMove = {
+                    manualSelectMode = false
+                    onMoveItems(selectedList)
+                },
+                onShare = {
+                    manualSelectMode = false
+                    onShareItems(selectedList)
+                },
+                onZip = {
+                    manualSelectMode = false
+                    onCreateZip(selectedList)
+                },
+                onFavorite = {
+                    manualSelectMode = false
+                    onFavoriteSelected(selectedList)
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+            )
+        } else if (uiState is BrowserUiState.Success || uiState is BrowserUiState.Error) {
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
@@ -560,12 +627,6 @@ fun FilesBrowserScreen(
                         QuickFabOption("New Code File", Icons.Rounded.Code) {
                             quickCreateExpanded = false
                             onNewCodeFile()
-                        }
-                        if (selectedItems.isNotEmpty()) {
-                            QuickFabOption("Create ZIP", Icons.Rounded.FolderZip) {
-                                quickCreateExpanded = false
-                                onCreateZip(selectedItems.values.toList())
-                            }
                         }
                     }
                 }
@@ -783,7 +844,15 @@ private fun FileRowItem(
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            if (!isSelectionMode) {
+            if (isSelectionMode) {
+                IconButton(onClick = onLongClick) {
+                    Icon(
+                        imageVector = if (isSelected) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
+                        contentDescription = if (isSelected) "Selected" else "Not selected",
+                        tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
                 Box {
                     IconButton(onClick = { showMenu = true }) {
                         Icon(Icons.Rounded.MoreVert, contentDescription = "More actions for ${item.name}")
@@ -820,6 +889,7 @@ private fun FileRowItem(
 private fun FileGridItem(
     item: StorageItem,
     isSelected: Boolean,
+    isSelectionMode: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit
 ) {
@@ -837,24 +907,39 @@ private fun FileGridItem(
             .clip(RoundedCornerShape(16.dp))
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
     ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            FileTypeIconBadge(item = item, size = 54.dp)
-            Text(
-                text = item.name,
-                style = MaterialTheme.typography.labelLarge,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = if (item.isDirectory) (if (item.isProtected) "Protected" else "Folder") else FormatUtils.formatBytes(item.size),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1
-            )
+        Box(modifier = Modifier.fillMaxWidth()) {
+            if (isSelectionMode) {
+                Icon(
+                    imageVector = if (isSelected) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
+                    contentDescription = if (isSelected) "Selected" else "Not selected",
+                    tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp)
+                        .size(20.dp)
+                )
+            }
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FileTypeIconBadge(item = item, size = 54.dp)
+                Text(
+                    text = item.name,
+                    style = MaterialTheme.typography.labelLarge,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = if (item.isDirectory) (if (item.isProtected) "Protected" else "Folder") else FormatUtils.formatBytes(item.size),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1
+                )
+            }
         }
     }
 }
@@ -920,17 +1005,8 @@ private fun FileContextDropdownMenu(
 private fun MultiSelectTopBar(
     selectedCount: Int,
     onClear: () -> Unit,
-    onSelectAll: () -> Unit,
-    onCopy: () -> Unit,
-    onCut: () -> Unit,
-    onMove: () -> Unit,
-    onDelete: () -> Unit,
-    onShare: () -> Unit,
-    onZip: () -> Unit,
-    onBatchRename: () -> Unit,
-    onFavorite: () -> Unit
+    onSelectAll: () -> Unit
 ) {
-    var overflow by remember { mutableStateOf(false) }
     Surface(
         color = MaterialTheme.colorScheme.primaryContainer,
         modifier = Modifier.fillMaxWidth()
@@ -941,16 +1017,96 @@ private fun MultiSelectTopBar(
                 .padding(horizontal = 8.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = onClear) { Icon(Icons.Rounded.Close, contentDescription = "Clear selection") }
-            Text("$selectedCount selected", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-            IconButton(onClick = onSelectAll) { Icon(Icons.Rounded.SelectAll, contentDescription = "Select all") }
-            IconButton(onClick = onCopy) { Icon(Icons.Rounded.ContentCopy, contentDescription = "Copy") }
-            IconButton(onClick = onCut) { Icon(Icons.Rounded.ContentCut, contentDescription = "Cut") }
-            IconButton(onClick = onDelete) { Icon(Icons.Rounded.Delete, contentDescription = "Delete") }
-            Box {
-                IconButton(onClick = { overflow = true }) {
-                    Icon(Icons.Rounded.MoreVert, contentDescription = "More selection actions")
-                }
+            IconButton(onClick = onClear) {
+                Icon(Icons.Rounded.Close, contentDescription = "Clear selection")
+            }
+            Text(
+                text = "$selectedCount selected",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.weight(1f)
+            )
+            TextButton(onClick = onSelectAll) {
+                Icon(Icons.Rounded.SelectAll, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(4.dp))
+                Text("Select All")
+            }
+        }
+    }
+}
+
+@Composable
+private fun MultiSelectBottomActionBar(
+    selectedCount: Int,
+    onDelete: () -> Unit,
+    onRename: () -> Unit,
+    onCopy: () -> Unit,
+    onCut: () -> Unit,
+    onMove: () -> Unit,
+    onShare: () -> Unit,
+    onZip: () -> Unit,
+    onFavorite: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var overflow by remember { mutableStateOf(false) }
+    val enabled = selectedCount > 0
+
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 8.dp,
+        shadowElevation = 6.dp,
+        modifier = modifier
+            .fillMaxWidth()
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 6.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            SelectionActionButton(
+                label = "Delete",
+                icon = Icons.Rounded.Delete,
+                enabled = enabled,
+                tint = MaterialTheme.colorScheme.error,
+                onClick = onDelete,
+                modifier = Modifier.weight(1f).testTag("multi_delete_button")
+            )
+            SelectionActionButton(
+                label = if (selectedCount > 1) "Batch Rename" else "Rename",
+                icon = Icons.Rounded.DriveFileRenameOutline,
+                enabled = enabled,
+                tint = MaterialTheme.colorScheme.primary,
+                onClick = onRename,
+                modifier = Modifier.weight(1f).testTag("multi_rename_button")
+            )
+            SelectionActionButton(
+                label = "Copy",
+                icon = Icons.Rounded.ContentCopy,
+                enabled = enabled,
+                tint = MaterialTheme.colorScheme.onSurface,
+                onClick = onCopy,
+                modifier = Modifier.weight(1f)
+            )
+            SelectionActionButton(
+                label = "Cut",
+                icon = Icons.Rounded.ContentCut,
+                enabled = enabled,
+                tint = MaterialTheme.colorScheme.onSurface,
+                onClick = onCut,
+                modifier = Modifier.weight(1f)
+            )
+            Box(modifier = Modifier.weight(0.75f), contentAlignment = Alignment.Center) {
+                SelectionActionButton(
+                    label = "More",
+                    icon = Icons.Rounded.MoreVert,
+                    enabled = enabled,
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    onClick = { overflow = true }
+                )
                 DropdownMenu(expanded = overflow, onDismissRequest = { overflow = false }) {
                     DropdownMenuItem(
                         leadingIcon = { Icon(Icons.Rounded.DriveFileMove, null) },
@@ -968,17 +1124,47 @@ private fun MultiSelectTopBar(
                         onClick = { overflow = false; onZip() }
                     )
                     DropdownMenuItem(
-                        leadingIcon = { Icon(Icons.Rounded.DriveFileRenameOutline, null) },
-                        text = { Text("Batch Rename") },
-                        onClick = { overflow = false; onBatchRename() }
-                    )
-                    DropdownMenuItem(
                         leadingIcon = { Icon(Icons.Rounded.Star, null) },
                         text = { Text("Add to Favorites") },
                         onClick = { overflow = false; onFavorite() }
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun SelectionActionButton(
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    enabled: Boolean,
+    tint: androidx.compose.ui.graphics.Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        shape = RoundedCornerShape(12.dp),
+        color = androidx.compose.ui.graphics.Color.Transparent,
+        modifier = modifier
+    ) {
+        Column(
+            modifier = Modifier
+                .alpha(if (enabled) 1f else 0.38f)
+                .padding(vertical = 6.dp, horizontal = 4.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Icon(icon, contentDescription = label, tint = tint, modifier = Modifier.size(21.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = tint,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }

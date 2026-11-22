@@ -1,9 +1,13 @@
 package com.example
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.OpenableColumns
+import android.webkit.MimeTypeMap
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -12,11 +16,17 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Analytics
+import androidx.compose.material.icons.outlined.Cloud
+import androidx.compose.material.icons.outlined.Folder
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.rounded.Analytics
 import androidx.compose.material.icons.rounded.Cloud
 import androidx.compose.material.icons.rounded.Folder
@@ -24,10 +34,12 @@ import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.OutlinedButton
@@ -46,10 +58,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -92,14 +107,21 @@ import com.example.viewmodel.BrowserUiState
 import com.example.viewmodel.CloudFtpViewModel
 import com.example.viewmodel.EditorViewModel
 import com.example.viewmodel.MainFileManagerViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.io.File
 
-private enum class TopTab(val route: String, val label: String, val icon: ImageVector) {
-    HOME("tab_home", "Home", Icons.Rounded.Home),
-    FILES("tab_files", "Files", Icons.Rounded.Folder),
-    STORAGE("tab_storage", "Storage", Icons.Rounded.Analytics),
-    CLOUD("tab_cloud", "Cloud", Icons.Rounded.Cloud),
-    SETTINGS("tab_settings", "Settings", Icons.Rounded.Settings)
+private enum class TopTab(
+    val route: String,
+    val label: String,
+    val selectedIcon: ImageVector,
+    val unselectedIcon: ImageVector
+) {
+    HOME("tab_home", "Home", Icons.Rounded.Home, Icons.Outlined.Home),
+    FILES("tab_files", "Files", Icons.Rounded.Folder, Icons.Outlined.Folder),
+    STORAGE("tab_storage", "Storage", Icons.Rounded.Analytics, Icons.Outlined.Analytics),
+    CLOUD("tab_cloud", "Cloud", Icons.Rounded.Cloud, Icons.Outlined.Cloud),
+    SETTINGS("tab_settings", "Settings", Icons.Rounded.Settings, Icons.Outlined.Settings)
 }
 
 private object Routes {
@@ -118,15 +140,28 @@ private object Routes {
 }
 
 class MainActivity : FragmentActivity() {
+    private val externalLaunchIntentFlow = MutableStateFlow<Pair<Int, Intent>?>(null)
+    private var externalIntentSeq = 0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        if (isFileOpenIntent(intent)) {
+            externalIntentSeq++
+            externalLaunchIntentFlow.value = externalIntentSeq to intent
+        }
         setContent {
             val mainVm: MainFileManagerViewModel = viewModel()
             val settings by mainVm.settings.collectAsStateWithLifecycle()
             val isUnlocked by mainVm.isAppUnlocked.collectAsStateWithLifecycle()
+            val externalIntentEvent by externalLaunchIntentFlow.asStateFlow().collectAsStateWithLifecycle()
 
-            var showSplash by remember { mutableStateOf(true) }
+            var showSplash by remember { mutableStateOf(externalIntentEvent == null) }
+            LaunchedEffect(externalIntentEvent) {
+                if (externalIntentEvent != null) {
+                    showSplash = false
+                }
+            }
 
             BlueFileManagerTheme(
                 themeMode = settings.themeMode,
@@ -141,15 +176,32 @@ class MainActivity : FragmentActivity() {
                             onBiometricSuccess = { mainVm.unlockAppWithBiometric() }
                         )
                     }
-                    else -> BlueFileManagerRoot(mainVm = mainVm)
+                    else -> BlueFileManagerRoot(
+                        mainVm = mainVm,
+                        externalIntentEvent = externalIntentEvent,
+                        onExternalIntentHandled = { externalLaunchIntentFlow.value = null }
+                    )
                 }
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        if (isFileOpenIntent(intent)) {
+            externalIntentSeq++
+            externalLaunchIntentFlow.value = externalIntentSeq to intent
         }
     }
 }
 
 @Composable
-private fun BlueFileManagerRoot(mainVm: MainFileManagerViewModel) {
+private fun BlueFileManagerRoot(
+    mainVm: MainFileManagerViewModel,
+    externalIntentEvent: Pair<Int, Intent>?,
+    onExternalIntentHandled: () -> Unit
+) {
     val context = LocalContext.current
     val navController = rememberNavController()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -171,6 +223,7 @@ private fun BlueFileManagerRoot(mainVm: MainFileManagerViewModel) {
     val operationProgress by mainVm.operationProgress.collectAsStateWithLifecycle()
     val largeFiles by mainVm.largeFiles.collectAsStateWithLifecycle()
     val recentFiles by mainVm.recentFiles.collectAsStateWithLifecycle()
+    val recentModifiedFiles by mainVm.recentModifiedFiles.collectAsStateWithLifecycle()
     val favorites by mainVm.favorites.collectAsStateWithLifecycle()
     val recycleBinItems by mainVm.recycleBinItems.collectAsStateWithLifecycle()
     val operationHistory by mainVm.operationHistory.collectAsStateWithLifecycle()
@@ -247,10 +300,21 @@ private fun BlueFileManagerRoot(mainVm: MainFileManagerViewModel) {
         }
     }
 
+    fun navigateToTopTab(tab: TopTab) {
+        if (navController.currentDestination?.route == tab.route) return
+        navController.navigate(tab.route) {
+            popUpTo(navController.graph.findStartDestination().id) {
+                saveState = true
+            }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+
     fun openStorageItem(item: StorageItem) {
         if (item.isDirectory) {
             mainVm.navigateToLocation(item.pathOrUri, item.isSafUri)
-            navController.navigate(TopTab.FILES.route) { launchSingleTop = true }
+            navigateToTopTab(TopTab.FILES)
             return
         }
         mainVm.markItemOpened(item)
@@ -284,6 +348,49 @@ private fun BlueFileManagerRoot(mainVm: MainFileManagerViewModel) {
         }
     }
 
+    LaunchedEffect(externalIntentEvent) {
+        val event = externalIntentEvent ?: return@LaunchedEffect
+        val incomingIntent = event.second
+        val resolvedItem = resolveExternalIntentToStorageItem(context, incomingIntent)
+        onExternalIntentHandled()
+        if (resolvedItem != null) {
+            mainVm.markItemOpened(resolvedItem)
+            activeItem = resolvedItem
+            when {
+                MimeAndCategoryHelper.isZip(resolvedItem.name, resolvedItem.mimeType) -> {
+                    navController.navigate(Routes.ZIP) { launchSingleTop = true }
+                }
+                MimeAndCategoryHelper.isEditableTextOrCode(resolvedItem.name, resolvedItem.mimeType) ||
+                    incomingIntent.action == Intent.ACTION_EDIT -> {
+                    navController.navigate(Routes.EDITOR) { launchSingleTop = true }
+                }
+                MimeAndCategoryHelper.isImage(resolvedItem.name, resolvedItem.mimeType) -> {
+                    navController.navigate(Routes.IMAGE) { launchSingleTop = true }
+                }
+                MimeAndCategoryHelper.isVideo(resolvedItem.name, resolvedItem.mimeType) -> {
+                    navController.navigate(Routes.VIDEO) { launchSingleTop = true }
+                }
+                MimeAndCategoryHelper.isAudio(resolvedItem.name, resolvedItem.mimeType) -> {
+                    activeAudioPlaylist = listOf(resolvedItem)
+                    navController.navigate(Routes.AUDIO) { launchSingleTop = true }
+                }
+                MimeAndCategoryHelper.isPdf(resolvedItem.name, resolvedItem.mimeType) -> {
+                    navController.navigate(Routes.PDF) { launchSingleTop = true }
+                }
+                MimeAndCategoryHelper.isApk(resolvedItem.name, resolvedItem.mimeType) -> {
+                    propertiesTarget = resolvedItem
+                }
+                looksLikeUtf8Text(context, resolvedItem) -> {
+                    navController.navigate(Routes.EDITOR) { launchSingleTop = true }
+                }
+                else -> {
+                    propertiesTarget = resolvedItem
+                    mainVm.emitMessage("Opened '${resolvedItem.name}' (${resolvedItem.mimeType})")
+                }
+            }
+        }
+    }
+
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val showTopLevelNav = TopTab.entries.any { it.route == currentRoute }
@@ -293,25 +400,46 @@ private fun BlueFileManagerRoot(mainVm: MainFileManagerViewModel) {
 
         Scaffold(
             snackbarHost = { SnackbarHost(snackbarHostState) },
-            contentWindowInsets = WindowInsets.safeDrawing,
+            contentWindowInsets = if (showTopLevelNav) WindowInsets.safeDrawing else WindowInsets(0, 0, 0, 0),
             bottomBar = {
                 if (showTopLevelNav && !useNavigationRail) {
-                    NavigationBar(windowInsets = WindowInsets.navigationBars) {
-                        TopTab.entries.forEach { tab ->
-                            val selected = currentRoute == tab.route
-                            NavigationBarItem(
-                                selected = selected,
-                                onClick = {
-                                    navController.navigate(tab.route) {
-                                        popUpTo(TopTab.HOME.route) { saveState = true }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
-                                },
-                                icon = { Icon(tab.icon, contentDescription = tab.label) },
-                                label = { Text(tab.label) },
-                                modifier = Modifier.testTag("nav_${tab.route}")
-                            )
+                    androidx.compose.foundation.layout.Column {
+                        HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
+                        NavigationBar(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                            tonalElevation = 4.dp,
+                            windowInsets = WindowInsets.navigationBars
+                        ) {
+                            TopTab.entries.forEach { tab ->
+                                val selected = currentRoute == tab.route
+                                NavigationBarItem(
+                                    selected = selected,
+                                    onClick = { navigateToTopTab(tab) },
+                                    icon = {
+                                        Icon(
+                                            imageVector = if (selected) tab.selectedIcon else tab.unselectedIcon,
+                                            contentDescription = tab.label
+                                        )
+                                    },
+                                    label = {
+                                        Text(
+                                            text = tab.label,
+                                            maxLines = 1,
+                                            softWrap = false,
+                                            overflow = TextOverflow.Ellipsis,
+                                            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
+                                        )
+                                    },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                                        indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                    ),
+                                    modifier = Modifier.testTag("nav_${tab.route}")
+                                )
+                            }
                         }
                     }
                 }
@@ -321,6 +449,7 @@ private fun BlueFileManagerRoot(mainVm: MainFileManagerViewModel) {
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
+                    .consumeWindowInsets(innerPadding)
             ) {
                 if (showTopLevelNav && useNavigationRail) {
                     NavigationRail {
@@ -328,15 +457,14 @@ private fun BlueFileManagerRoot(mainVm: MainFileManagerViewModel) {
                             val selected = currentRoute == tab.route
                             NavigationRailItem(
                                 selected = selected,
-                                onClick = {
-                                    navController.navigate(tab.route) {
-                                        popUpTo(TopTab.HOME.route) { saveState = true }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
+                                onClick = { navigateToTopTab(tab) },
+                                icon = {
+                                    Icon(
+                                        imageVector = if (selected) tab.selectedIcon else tab.unselectedIcon,
+                                        contentDescription = tab.label
+                                    )
                                 },
-                                icon = { Icon(tab.icon, contentDescription = tab.label) },
-                                label = { Text(tab.label) }
+                                label = { Text(tab.label, maxLines = 1) }
                             )
                         }
                     }
@@ -355,12 +483,14 @@ private fun BlueFileManagerRoot(mainVm: MainFileManagerViewModel) {
                                 recentFiles = recentFiles,
                                 favorites = favorites,
                                 onGrantStorageAccess = { launchGrantStorageAccess() },
-                                onScanStorage = { mainVm.startStorageScan() },
-                                onCancelScan = { mainVm.cancelStorageScan() },
-                                onRefresh = { mainVm.refreshCurrentDirectory() },
-                                onAnalyzeStorage = {
-                                    navController.navigate(TopTab.STORAGE.route) { launchSingleTop = true }
+                                onScanStorage = {
+                                    if (!hasStorageAccess) launchGrantStorageAccess()
+                                    else mainVm.startStorageScan()
                                 },
+                                onCancelScan = { mainVm.cancelStorageScan() },
+                                onRefresh = { mainVm.refreshStorageAccessState() },
+                                onAnalyzeStorage = { navigateToTopTab(TopTab.STORAGE) },
+                                onOpenBrowseFiles = { navigateToTopTab(TopTab.FILES) },
                                 onOpenSearch = { navController.navigate(Routes.SEARCH) },
                                 onOpenCategory = { cat -> navController.navigate("screen_category/${cat.name}") },
                                 onOpenRecentScreen = { navController.navigate(Routes.RECENT) },
@@ -369,19 +499,28 @@ private fun BlueFileManagerRoot(mainVm: MainFileManagerViewModel) {
                                 onOpenHistory = { navController.navigate(Routes.HISTORY) },
                                 onQuickNewFolder = {
                                     if (!hasStorageAccess) launchGrantStorageAccess()
-                                    else showCreateFolderDialog = true
+                                    else {
+                                        if (mainVm.currentFolderInfo() == null) mainVm.refreshStorageAccessState()
+                                        showCreateFolderDialog = true
+                                    }
                                 },
                                 onQuickNewFile = {
                                     if (!hasStorageAccess) launchGrantStorageAccess()
-                                    else createFileDialogIsCode = false
+                                    else {
+                                        if (mainVm.currentFolderInfo() == null) mainVm.refreshStorageAccessState()
+                                        createFileDialogIsCode = false
+                                    }
                                 },
                                 onQuickNewCodeFile = {
                                     if (!hasStorageAccess) launchGrantStorageAccess()
-                                    else createFileDialogIsCode = true
+                                    else {
+                                        if (mainVm.currentFolderInfo() == null) mainVm.refreshStorageAccessState()
+                                        createFileDialogIsCode = true
+                                    }
                                 },
                                 onQuickZip = {
-                                    navController.navigate(TopTab.FILES.route) { launchSingleTop = true }
-                                    mainVm.emitMessage("Long-press items in Files to select and create a ZIP archive")
+                                    navigateToTopTab(TopTab.FILES)
+                                    mainVm.emitMessage("Tap Select (✓) or long-press items in Files to create a ZIP archive")
                                 },
                                 onOpenRecentItem = { rec ->
                                     openStorageItem(
@@ -437,6 +576,7 @@ private fun BlueFileManagerRoot(mainVm: MainFileManagerViewModel) {
                                 onRefresh = { mainVm.refreshCurrentDirectory() },
                                 onSearchQueryChange = { mainVm.setBrowserSearchQuery(it) },
                                 onOpenGlobalSearch = { navController.navigate(Routes.SEARCH) },
+                                onOpenRecentFiles = { navController.navigate(Routes.RECENT) },
                                 onToggleViewMode = { mainVm.setViewMode(it) },
                                 onSortChange = { opt, dir -> mainVm.setSort(opt, dir) },
                                 onItemClick = { item ->
@@ -724,9 +864,17 @@ private fun BlueFileManagerRoot(mainVm: MainFileManagerViewModel) {
                         composable(Routes.RECENT) {
                             RecentFilesScreen(
                                 recentFiles = recentFiles,
+                                recentModifiedFiles = recentModifiedFiles,
                                 onOpenRecent = { openStorageItem(it) },
                                 onShareRecent = { mainVm.shareItems(context, listOf(it)) },
+                                onRenameItem = { renameTarget = it },
+                                onBatchRename = { batchRenameTargets = it },
+                                onDeleteItems = { mainVm.requestDelete(it) },
                                 onRemoveRecent = { mainVm.removeRecent(it) },
+                                onScanStorage = {
+                                    if (!hasStorageAccess) launchGrantStorageAccess()
+                                    else mainVm.startStorageScan()
+                                },
                                 onBack = { navController.popBackStack() }
                             )
                         }
@@ -921,7 +1069,7 @@ private fun BlueFileManagerRoot(mainVm: MainFileManagerViewModel) {
                 propertiesTarget = null
                 if (item.parentPathOrUri.isNotBlank()) {
                     mainVm.navigateToLocation(item.parentPathOrUri, item.isSafUri)
-                    navController.navigate(TopTab.FILES.route) { launchSingleTop = true }
+                    navigateToTopTab(TopTab.FILES)
                 }
             },
             onDismiss = { propertiesTarget = null }
@@ -932,4 +1080,118 @@ private fun BlueFileManagerRoot(mainVm: MainFileManagerViewModel) {
         progress = operationProgress,
         onCancel = { mainVm.cancelActiveOperation() }
     )
+}
+
+private fun extractIntentUri(intent: Intent?): Uri? {
+    if (intent == null) return null
+    intent.data?.let { return it }
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
+    } else {
+        @Suppress("DEPRECATION")
+        intent.getParcelableExtra(Intent.EXTRA_STREAM)
+    }
+}
+
+private fun isFileOpenIntent(intent: Intent?): Boolean {
+    val action = intent?.action ?: return false
+    if (action != Intent.ACTION_VIEW && action != Intent.ACTION_EDIT) return false
+    val uri = extractIntentUri(intent) ?: return false
+    val scheme = uri.scheme?.lowercase()
+    return scheme == "content" || scheme == "file"
+}
+
+private fun resolveExternalIntentToStorageItem(context: Context, intent: Intent): StorageItem? {
+    val uri = extractIntentUri(intent) ?: return null
+    if (uri.scheme.equals("file", ignoreCase = true) && !uri.path.isNullOrBlank()) {
+        val file = File(uri.path!!)
+        val ext = MimeAndCategoryHelper.extractExtension(file.name)
+        val mime = intent.type?.takeIf { it.isNotBlank() && it != "*/*" }
+            ?: MimeAndCategoryHelper.getMimeType(file.name)
+        return StorageItem(
+            pathOrUri = file.absolutePath,
+            name = file.name.ifBlank { "opened_file" },
+            parentPathOrUri = file.parent ?: "",
+            isDirectory = file.isDirectory,
+            isSafUri = false,
+            size = if (file.exists()) file.length() else 0L,
+            lastModified = if (file.exists()) file.lastModified() else System.currentTimeMillis(),
+            extension = ext,
+            mimeType = mime,
+            category = MimeAndCategoryHelper.categorize(file.name, file.absolutePath, mime)
+        )
+    }
+
+    var displayName: String? = null
+    var fileSize = 0L
+    runCatching {
+        context.contentResolver.query(
+            uri,
+            arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE),
+            null,
+            null,
+            null
+        )?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val nameIdx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (nameIdx >= 0) displayName = cursor.getString(nameIdx)
+                val sizeIdx = cursor.getColumnIndex(OpenableColumns.SIZE)
+                if (sizeIdx >= 0 && !cursor.isNull(sizeIdx)) fileSize = cursor.getLong(sizeIdx)
+            }
+        }
+    }
+
+    val rawMime = intent.type?.takeIf { it.isNotBlank() && it != "*/*" }
+        ?: runCatching { context.contentResolver.getType(uri) }.getOrNull()
+
+    var finalName = displayName?.takeIf { it.isNotBlank() }
+        ?: uri.lastPathSegment?.substringAfterLast('/')?.takeIf { it.isNotBlank() }
+        ?: "opened_file"
+
+    if (MimeAndCategoryHelper.extractExtension(finalName).isEmpty() && !rawMime.isNullOrBlank()) {
+        val inferredExt = MimeTypeMap.getSingleton().getExtensionFromMimeType(rawMime)
+        if (!inferredExt.isNullOrBlank()) {
+            finalName = "$finalName.$inferredExt"
+        }
+    }
+
+    val resolvedMime = MimeAndCategoryHelper.getMimeType(finalName, rawMime)
+    val ext = MimeAndCategoryHelper.extractExtension(finalName)
+    return StorageItem(
+        pathOrUri = uri.toString(),
+        name = finalName,
+        parentPathOrUri = "",
+        isDirectory = false,
+        isSafUri = true,
+        size = fileSize,
+        lastModified = System.currentTimeMillis(),
+        extension = ext,
+        mimeType = resolvedMime,
+        category = MimeAndCategoryHelper.categorize(finalName, uri.toString(), resolvedMime)
+    )
+}
+
+private fun looksLikeUtf8Text(context: Context, item: StorageItem): Boolean {
+    if (item.size > 2L * 1024L * 1024L) return false
+    return runCatching {
+        val stream = if (item.isSafUri) {
+            context.contentResolver.openInputStream(Uri.parse(item.pathOrUri))
+        } else {
+            File(item.pathOrUri).inputStream()
+        }
+        stream?.use { input ->
+            val buf = ByteArray(512)
+            val read = input.read(buf)
+            if (read <= 0) return@runCatching true
+            var suspiciousControl = 0
+            for (i in 0 until read) {
+                val b = buf[i].toInt() and 0xFF
+                if (b == 0) return@runCatching false
+                if (b < 0x09 || (b in 0x0E..0x1F && b != 0x1B)) {
+                    suspiciousControl++
+                }
+            }
+            suspiciousControl * 10 < read
+        } ?: false
+    }.getOrDefault(false)
 }

@@ -79,6 +79,9 @@ class RealFileOperationsRepository(
     fun observeLargeFiles(minSizeBytes: Long): Flow<List<StorageItem>> =
         dao.observeLargeFiles(minSizeBytes).map { list -> list.map { it.toStorageItem() } }
 
+    fun observeRecentlyModifiedFiles(includeHidden: Boolean): Flow<List<StorageItem>> =
+        dao.observeRecentlyModifiedFiles(includeHidden).map { list -> list.map { it.toStorageItem() } }
+
     suspend fun searchFiles(
         query: String,
         category: FileCategory?,
@@ -611,10 +614,16 @@ class RealFileOperationsRepository(
     ): Result<Unit> = withContext(Dispatchers.IO) {
         val res = runCatching {
             if (isSafUri) {
-                context.contentResolver.openOutputStream(Uri.parse(pathOrUri), "wt")?.use { out ->
-                    out.write(content.toByteArray(Charsets.UTF_8))
-                    out.flush()
-                } ?: throw IllegalStateException("Cannot write to SAF file")
+                try {
+                    context.contentResolver.openOutputStream(Uri.parse(pathOrUri), "wt")?.use { out ->
+                        out.write(content.toByteArray(Charsets.UTF_8))
+                        out.flush()
+                    } ?: throw IllegalStateException("External file is read-only — use Menu (⋮) → Save As... to save to your device.")
+                } catch (e: SecurityException) {
+                    throw SecurityException("External file is read-only — use Menu (⋮) → Save As... to save a copy.", e)
+                } catch (e: UnsupportedOperationException) {
+                    throw IllegalStateException("External file is read-only — use Menu (⋮) → Save As... to save a copy.", e)
+                }
                 val doc = DocumentFile.fromSingleUri(context, Uri.parse(pathOrUri))
                 val existing = dao.getByPath(pathOrUri)
                 if (existing != null) {

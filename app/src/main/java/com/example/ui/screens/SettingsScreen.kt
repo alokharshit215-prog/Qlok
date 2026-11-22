@@ -339,6 +339,7 @@ fun SettingsScreen(
                     Column {
                         Text("Blue File Manager", style = MaterialTheme.typography.titleMedium)
                         Text("Version 1.0.0 • Made by Alok", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Support by Harshit", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                     }
                 }
                 Spacer(Modifier.height(6.dp))
@@ -417,6 +418,7 @@ fun SettingsScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Version 1.0.0", fontWeight = FontWeight.SemiBold)
                     Text("Made by Alok", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                    Text("Support by Harshit", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
                     Text(
                         "Built with Kotlin, Jetpack Compose, Material 3, Room, Storage Access Framework, Media3 ExoPlayer, Zip4j, and Apache Commons Net.",
                         style = MaterialTheme.typography.bodySmall

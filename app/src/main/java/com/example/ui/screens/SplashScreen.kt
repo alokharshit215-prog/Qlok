@@ -78,14 +78,25 @@ fun SplashScreen(onFinished: () -> Unit) {
             )
         }
 
-        Text(
-            text = "Made by Alok",
-            style = MaterialTheme.typography.labelLarge,
-            color = LightBlue.copy(alpha = 0.85f),
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 16.dp)
                 .alpha(alpha.value)
-        )
+        ) {
+            Text(
+                text = "Made by Alok",
+                style = MaterialTheme.typography.labelLarge,
+                color = Color.White.copy(alpha = 0.92f),
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = "Support by Harshit",
+                style = MaterialTheme.typography.labelMedium,
+                color = LightBlue.copy(alpha = 0.85f)
+            )
+        }
     }
 }

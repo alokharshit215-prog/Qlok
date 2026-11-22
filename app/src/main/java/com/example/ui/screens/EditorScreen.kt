@@ -6,10 +6,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -70,6 +72,7 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -79,6 +82,7 @@ import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -124,6 +128,7 @@ fun EditorScreen(
     var showGoToLineDialog by remember { mutableStateOf(false) }
     var showOverflowMenu by remember { mutableStateOf(false) }
     var showUnsavedDialog by remember { mutableStateOf(false) }
+    var pendingScrollToOffset by remember { mutableStateOf<Int?>(null) }
 
     // Save As / Save Copy flow state
     var pendingSaveActionIsCopy by remember { mutableStateOf<Boolean?>(null) }
@@ -166,6 +171,16 @@ fun EditorScreen(
     val textColor = if (settings.editorDarkTheme) EditorDarkText else EditorLightText
     val verticalScroll = rememberScrollState()
     val horizontalScroll = rememberScrollState()
+    var textLayoutResult by remember { mutableStateOf<TextLayoutResult?>(null) }
+
+    LaunchedEffect(pendingScrollToOffset) {
+        val target = pendingScrollToOffset ?: return@LaunchedEffect
+        val y = textLayoutResult?.getCursorRect(target.coerceIn(0, fieldValue.text.length))?.top?.toInt()
+        if (y != null) {
+            verticalScroll.animateScrollTo((y - 80).coerceAtLeast(0))
+        }
+        pendingScrollToOffset = null
+    }
 
     val ext = remember(state.fileName) { MimeAndCategoryHelper.extractExtension(state.fileName) }
     val syntaxTransformation = remember(settings.editorSyntaxHighlighting, settings.editorDarkTheme, ext) {
@@ -330,7 +345,9 @@ fun EditorScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .background(bgColor)
                 .padding(innerPadding)
+                .consumeWindowInsets(innerPadding)
                 .imePadding()
         ) {
             // Crash-recovery Draft Banner
@@ -383,6 +400,7 @@ fun EditorScreen(
                                         if (idx == -1) idx = fieldValue.text.indexOf(findQuery, ignoreCase = true)
                                         if (idx >= 0) {
                                             fieldValue = fieldValue.copy(selection = TextRange(idx, idx + findQuery.length))
+                                            pendingScrollToOffset = idx
                                         } else {
                                             scope.launch { snackbarHostState.showSnackbar("No match found") }
                                         }
@@ -431,57 +449,87 @@ fun EditorScreen(
                     val fontSp = settings.editorFontSizeSp.sp
                     val lineHeightSp = (settings.editorFontSizeSp + 6).sp
 
-                    Row(
+                    val lineNumbersText = remember(fieldValue.text, lineCount, settings.editorWordWrap, textLayoutResult) {
+                        val layout = textLayoutResult
+                        if (settings.editorWordWrap && layout != null && layout.lineCount > 0) {
+                            val raw = fieldValue.text
+                            val sb = StringBuilder()
+                            var logicalLine = 1
+                            for (vLine in 0 until layout.lineCount) {
+                                if (vLine > 0) sb.append('\n')
+                                val startOffset = layout.getLineStart(vLine)
+                                val isLogicalStart = vLine == 0 ||
+                                    (startOffset > 0 && startOffset <= raw.length && raw[startOffset - 1] == '\n')
+                                if (isLogicalStart) {
+                                    sb.append(logicalLine++)
+                                }
+                            }
+                            sb.toString()
+                        } else {
+                            (1..lineCount).joinToString("\n")
+                        }
+                    }
+
+                    BoxWithConstraints(
                         modifier = Modifier
-                            .fillMaxSize()
+                            .weight(1f)
+                            .fillMaxWidth()
                             .background(bgColor)
-                            .verticalScroll(verticalScroll)
                     ) {
-                        if (settings.editorLineNumbers) {
-                            Column(
-                                modifier = Modifier
-                                    .background(gutterColor)
-                                    .fillMaxHeight()
-                                    .padding(horizontal = 10.dp, vertical = 14.dp),
-                                horizontalAlignment = Alignment.End
-                            ) {
-                                for (line in 1..lineCount) {
+                        val viewportMinHeight = maxHeight
+                        Row(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .verticalScroll(verticalScroll)
+                        ) {
+                            if (settings.editorLineNumbers) {
+                                Box(
+                                    modifier = Modifier
+                                        .background(gutterColor)
+                                        .defaultMinSize(minHeight = viewportMinHeight)
+                                        .padding(horizontal = 10.dp, vertical = 14.dp),
+                                    contentAlignment = Alignment.TopEnd
+                                ) {
                                     Text(
-                                        text = line.toString(),
+                                        text = lineNumbersText,
+                                        textAlign = TextAlign.End,
                                         style = TextStyle(
                                             fontFamily = JetBrainsMonoFontFamily,
                                             fontSize = fontSp,
                                             lineHeight = lineHeightSp,
-                                            color = textColor.copy(alpha = 0.42f)
+                                            color = textColor.copy(alpha = 0.48f)
                                         )
                                     )
                                 }
                             }
+
+                            val editorModifier = Modifier
+                                .weight(1f)
+                                .defaultMinSize(minHeight = viewportMinHeight)
+                                .then(if (!settings.editorWordWrap) Modifier.horizontalScroll(horizontalScroll) else Modifier)
+                                .padding(horizontal = 12.dp, vertical = 14.dp)
+                                .testTag("code_editor_input")
+
+                            BasicTextField(
+                                value = fieldValue,
+                                onValueChange = { updated ->
+                                    fieldValue = updated
+                                    viewModel.updateContent(updated.text, settings.editorAutoSaveSeconds)
+                                },
+                                onTextLayout = { layout ->
+                                    textLayoutResult = layout
+                                },
+                                textStyle = TextStyle(
+                                    fontFamily = JetBrainsMonoFontFamily,
+                                    fontSize = fontSp,
+                                    lineHeight = lineHeightSp,
+                                    color = textColor
+                                ),
+                                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                                visualTransformation = syntaxTransformation,
+                                modifier = editorModifier
+                            )
                         }
-
-                        val editorModifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .padding(horizontal = 12.dp, vertical = 14.dp)
-                            .then(if (!settings.editorWordWrap) Modifier.horizontalScroll(horizontalScroll) else Modifier)
-                            .testTag("code_editor_input")
-
-                        BasicTextField(
-                            value = fieldValue,
-                            onValueChange = { updated ->
-                                fieldValue = updated
-                                viewModel.updateContent(updated.text, settings.editorAutoSaveSeconds)
-                            },
-                            textStyle = TextStyle(
-                                fontFamily = JetBrainsMonoFontFamily,
-                                fontSize = fontSp,
-                                lineHeight = lineHeightSp,
-                                color = textColor
-                            ),
-                            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                            visualTransformation = syntaxTransformation,
-                            modifier = editorModifier
-                        )
                     }
                 }
             }
@@ -514,6 +562,7 @@ fun EditorScreen(
                         offset += lines[i].length + 1
                     }
                     fieldValue = fieldValue.copy(selection = TextRange(offset))
+                    pendingScrollToOffset = offset
                     showGoToLineDialog = false
                 }) { Text("Jump") }
             },

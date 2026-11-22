@@ -3,13 +3,13 @@ package com.example.ui.screens
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,10 +22,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.Analytics
 import androidx.compose.material.icons.rounded.Code
 import androidx.compose.material.icons.rounded.CreateNewFolder
 import androidx.compose.material.icons.rounded.DeleteSweep
+import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material.icons.rounded.FolderZip
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.InsertDriveFile
@@ -38,12 +40,10 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -51,11 +51,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.data.db.FavoriteEntity
@@ -64,6 +67,7 @@ import com.example.model.FileCategory
 import com.example.model.ScanProgress
 import com.example.model.StorageItem
 import com.example.model.StorageStats
+import com.example.ui.components.BlueFileManagerLogo
 import com.example.ui.components.FileTypeIconBadge
 import com.example.ui.components.categoryColor
 import com.example.ui.components.categoryIcon
@@ -85,6 +89,7 @@ fun HomeScreen(
     onCancelScan: () -> Unit,
     onRefresh: () -> Unit,
     onAnalyzeStorage: () -> Unit,
+    onOpenBrowseFiles: () -> Unit,
     onOpenSearch: () -> Unit,
     onOpenCategory: (FileCategory) -> Unit,
     onOpenRecentScreen: () -> Unit,
@@ -100,44 +105,116 @@ fun HomeScreen(
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Top Header + Search Action
+        // Polished Top Header with Brand Badge
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
-                    Text(
-                        text = "Blue File Manager",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Text(
-                        text = if (hasStorageAccess) {
-                            "${stats.totalIndexedFiles} files • ${stats.totalIndexedFolders} folders indexed"
-                        } else {
-                            "Grant storage access to browse & scan"
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    IconButton(onClick = onOpenSearch, modifier = Modifier.testTag("home_search_button")) {
-                        Icon(Icons.Rounded.Search, contentDescription = "Search files")
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    BlueFileManagerLogo(size = 42.dp)
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = "Blue File Manager",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = if (hasStorageAccess) {
+                                "${stats.totalIndexedFiles} files • ${stats.totalIndexedFolders} folders indexed"
+                            } else {
+                                "Grant storage access to browse & scan"
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
-                    IconButton(onClick = onRefresh, modifier = Modifier.testTag("home_refresh_button")) {
-                        Icon(Icons.Rounded.Refresh, contentDescription = "Refresh")
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.65f)
+                    ) {
+                        IconButton(
+                            onClick = onOpenSearch,
+                            modifier = Modifier.testTag("home_search_button")
+                        ) {
+                            Icon(
+                                Icons.Rounded.Search,
+                                contentDescription = "Search files",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.75f)
+                    ) {
+                        IconButton(
+                            onClick = onRefresh,
+                            modifier = Modifier.testTag("home_refresh_button")
+                        ) {
+                            Icon(
+                                Icons.Rounded.Refresh,
+                                contentDescription = "Refresh",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }
         }
 
-        // Storage Hero Overview Card
+        // Quick Search Pill Bar
+        item {
+            Surface(
+                onClick = onOpenSearch,
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surface,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .defaultMinSize(minHeight = 50.dp)
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(16.dp))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Rounded.Search,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(Modifier.width(10.dp))
+                    Text(
+                        text = "Search files, folders, documents, code...",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+
+        // Storage Hero Overview Card with Decorative Radial Accents
         item {
             val pctInt = (stats.usagePercent * 100).toInt().coerceIn(0, 100)
             Box(
@@ -149,6 +226,18 @@ fun HomeScreen(
                             colors = listOf(DarkBlue, PrimaryBlue, BrightBlue)
                         )
                     )
+                    .drawBehind {
+                        drawCircle(
+                            color = Color.White.copy(alpha = 0.08f),
+                            radius = size.height * 0.65f,
+                            center = Offset(size.width * 0.92f, size.height * 0.15f)
+                        )
+                        drawCircle(
+                            color = Color.White.copy(alpha = 0.06f),
+                            radius = size.height * 0.45f,
+                            center = Offset(size.width * 0.12f, size.height * 0.95f)
+                        )
+                    }
                     .padding(20.dp)
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -157,21 +246,22 @@ fun HomeScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = "Device Storage",
                                 style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
                                 color = Color.White
                             )
                             Text(
                                 text = "${FormatUtils.formatBytes(stats.usedBytes)} used of ${FormatUtils.formatBytes(stats.totalBytes)}",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = LightBlue.copy(alpha = 0.9f)
+                                color = LightBlue.copy(alpha = 0.92f)
                             )
                         }
                         Surface(
                             shape = RoundedCornerShape(12.dp),
-                            color = Color.White.copy(alpha = 0.18f)
+                            color = Color.White.copy(alpha = 0.2f)
                         ) {
                             Text(
                                 text = "$pctInt%",
@@ -190,7 +280,7 @@ fun HomeScreen(
                             .height(10.dp)
                             .clip(RoundedCornerShape(5.dp)),
                         color = Color.White,
-                        trackColor = Color.White.copy(alpha = 0.25f)
+                        trackColor = Color.White.copy(alpha = 0.26f)
                     )
 
                     Row(
@@ -199,34 +289,33 @@ fun HomeScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
-                            Text("Free Space", style = MaterialTheme.typography.labelSmall, color = LightBlue.copy(alpha = 0.85f))
+                            Text("Free Space", style = MaterialTheme.typography.labelSmall, color = LightBlue.copy(alpha = 0.88f))
                             Text(
                                 FormatUtils.formatBytes(stats.freeBytes),
                                 style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
                                 color = Color.White
                             )
                         }
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Button(
-                                onClick = onAnalyzeStorage,
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color.White,
-                                    contentColor = DarkBlue
-                                ),
-                                shape = RoundedCornerShape(12.dp),
-                                modifier = Modifier.testTag("analyze_storage_button")
-                            ) {
-                                Icon(Icons.Rounded.Analytics, contentDescription = null, modifier = Modifier.size(18.dp))
-                                Spacer(Modifier.width(6.dp))
-                                Text("Analyze Storage")
-                            }
+                        Button(
+                            onClick = onAnalyzeStorage,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.White,
+                                contentColor = DarkBlue
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.testTag("analyze_storage_button")
+                        ) {
+                            Icon(Icons.Rounded.Analytics, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("Analyze", fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
             }
         }
 
-        // Storage Access or Scan Prompt / Live Scan Progress
+        // Storage Access / Scan Prompt / Live Scan Progress
         item {
             AnimatedVisibility(visible = scanProgress.isScanning) {
                 Card(
@@ -328,7 +417,7 @@ fun HomeScreen(
                             onClick = onScanStorage,
                             modifier = Modifier.testTag("home_scan_storage_button")
                         ) {
-                            Text("SCAN STORAGE")
+                            Text("SCAN")
                         }
                     }
                 }
@@ -337,8 +426,8 @@ fun HomeScreen(
 
         // Categories 2x4 Grid
         item {
-            Text("Categories", style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.height(8.dp))
+            SectionHeader(title = "Categories", actionLabel = "Browse Files", onAction = onOpenBrowseFiles)
+            Spacer(Modifier.height(6.dp))
             val categories = FileCategory.entries
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 categories.chunked(2).forEach { pair ->
@@ -362,15 +451,15 @@ fun HomeScreen(
             }
         }
 
-        // Quick Actions
+        // Quick Actions (Crisp 2x4 Grid with non-truncating labels & >=48dp touch targets)
         item {
-            Text("Quick Actions", style = MaterialTheme.typography.titleMedium)
+            Text("Quick Actions", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(8.dp))
             val actions = listOf(
                 Triple("New Folder", Icons.Rounded.CreateNewFolder, onQuickNewFolder),
                 Triple("New File", Icons.Rounded.InsertDriveFile, onQuickNewFile),
                 Triple("New Code", Icons.Rounded.Code, onQuickNewCodeFile),
-                Triple("Scan Storage", Icons.Rounded.Radar, onScanStorage),
+                Triple("Scan", Icons.Rounded.Radar, onScanStorage),
                 Triple("Refresh", Icons.Rounded.Refresh, onRefresh),
                 Triple("Recent", Icons.Rounded.History, onOpenRecentScreen),
                 Triple("Favorites", Icons.Rounded.Star, onOpenFavoritesScreen),
@@ -395,30 +484,28 @@ fun HomeScreen(
             }
         }
 
-        // Utility Links: Recycle Bin & Operation History
+        // Utility Tool Cards: Recycle Bin & Operation History
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                FilledTonalButton(
+                HomeToolCard(
+                    title = "Recycle Bin",
+                    subtitle = "Recover deleted files",
+                    icon = Icons.Rounded.DeleteSweep,
+                    accent = MaterialTheme.colorScheme.primary,
                     onClick = onOpenRecycleBin,
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Rounded.DeleteSweep, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("Recycle Bin")
-                }
-                OutlinedButton(
+                    modifier = Modifier.weight(1f).testTag("home_recycle_bin_card")
+                )
+                HomeToolCard(
+                    title = "Operations",
+                    subtitle = "History & activity",
+                    icon = Icons.Rounded.History,
+                    accent = BrightBlue,
                     onClick = onOpenHistory,
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Rounded.History, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("Operations")
-                }
+                    modifier = Modifier.weight(1f).testTag("home_operations_card")
+                )
             }
         }
 
@@ -427,7 +514,12 @@ fun HomeScreen(
             SectionHeader(title = "Recent Files", actionLabel = "View All", onAction = onOpenRecentScreen)
             Spacer(Modifier.height(6.dp))
             if (recentFiles.isEmpty()) {
-                EmptyStripNote("Recently opened, created, or edited files will appear here.")
+                ActionableEmptyStripNote(
+                    title = "No recent files yet",
+                    subtitle = "Tap to browse your folders or open any file to track it here.",
+                    icon = Icons.Rounded.FolderOpen,
+                    onClick = onOpenBrowseFiles
+                )
             } else {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     items(recentFiles.take(12), key = { it.pathOrUri }) { entry ->
@@ -457,7 +549,12 @@ fun HomeScreen(
             SectionHeader(title = "Favorites", actionLabel = "Manage", onAction = onOpenFavoritesScreen)
             Spacer(Modifier.height(6.dp))
             if (favorites.isEmpty()) {
-                EmptyStripNote("Star files or folders to pin them here for instant access.")
+                ActionableEmptyStripNote(
+                    title = "No favorites pinned",
+                    subtitle = "Star files or folders in the browser to pin them here.",
+                    icon = Icons.Rounded.Star,
+                    onClick = onOpenBrowseFiles
+                )
             } else {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     items(favorites.take(12), key = { it.pathOrUri }) { fav ->
@@ -483,7 +580,23 @@ fun HomeScreen(
             }
         }
 
-        item { Spacer(Modifier.height(16.dp)) }
+        // Subtle Footer Credits
+        item {
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "Blue File Manager • Made by Alok • Support by Harshit",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+        }
     }
 }
 
@@ -502,6 +615,7 @@ private fun CategoryTile(
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 1.dp,
         modifier = modifier
+            .defaultMinSize(minHeight = 68.dp)
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(18.dp))
             .testTag("category_${category.name.lowercase()}")
     ) {
@@ -528,6 +642,7 @@ private fun CategoryTile(
                 Text(
                     text = category.displayName,
                     style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -555,12 +670,13 @@ private fun QuickActionChip(
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,
         modifier = modifier
+            .defaultMinSize(minHeight = 76.dp)
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(16.dp))
     ) {
         Column(
-            modifier = Modifier.padding(vertical = 12.dp, horizontal = 6.dp),
+            modifier = Modifier.padding(vertical = 10.dp, horizontal = 4.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+            verticalArrangement = Arrangement.Center
         ) {
             Box(
                 modifier = Modifier
@@ -576,12 +692,66 @@ private fun QuickActionChip(
                     modifier = Modifier.size(19.dp)
                 )
             }
+            Spacer(Modifier.height(6.dp))
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelSmall,
-                maxLines = 1,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
+        }
+    }
+}
+
+@Composable
+private fun HomeToolCard(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    accent: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 1.dp,
+        modifier = modifier
+            .defaultMinSize(minHeight = 68.dp)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(18.dp))
+    ) {
+        Row(
+            modifier = Modifier.padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(accent.copy(alpha = 0.14f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(20.dp))
+            }
+            Spacer(Modifier.width(10.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
     }
 }
@@ -593,24 +763,51 @@ private fun SectionHeader(title: String, actionLabel: String, onAction: () -> Un
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(title, style = MaterialTheme.typography.titleMedium)
+        Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         TextButton(onClick = onAction) { Text(actionLabel) }
     }
 }
 
 @Composable
-private fun EmptyStripNote(text: String) {
+private fun ActionableEmptyStripNote(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    onClick: () -> Unit
+) {
     Surface(
-        shape = RoundedCornerShape(14.dp),
+        onClick = onClick,
+        shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f), RoundedCornerShape(16.dp))
     ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(14.dp)
-        )
+        Row(
+            modifier = Modifier.padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.labelLarge)
+                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Icon(
+                Icons.AutoMirrored.Rounded.ArrowForward,
+                contentDescription = "Open",
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(18.dp)
+            )
+        }
     }
 }
 
@@ -626,7 +823,7 @@ private fun RecentOrFavoriteMiniCard(
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,
         modifier = Modifier
-            .width(142.dp)
+            .width(146.dp)
             .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(16.dp))
     ) {
         Column(

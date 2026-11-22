@@ -95,6 +95,8 @@ class MainFileManagerViewModel(application: Application) : AndroidViewModel(appl
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
     val recentFiles: StateFlow<List<RecentFileEntity>> = repo.recentFiles
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    val recentModifiedFiles: StateFlow<List<StorageItem>> = repo.observeRecentlyModifiedFiles(includeHidden = false)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val favorites: StateFlow<List<FavoriteEntity>> = repo.favorites
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val favoriteKeys: StateFlow<Set<String>> = repo.favoriteKeys
@@ -624,6 +626,7 @@ class MainFileManagerViewModel(application: Application) : AndroidViewModel(appl
     private fun executeRename(item: StorageItem, newName: String) {
         viewModelScope.launch {
             repo.renameItem(item, newName).onSuccess {
+                _selectedItems.value = emptyMap()
                 _messages.tryEmit("Renamed to '${it.name}'")
                 refreshCurrentDirectory()
             }.onFailure {

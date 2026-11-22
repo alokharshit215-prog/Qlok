@@ -1,7 +1,9 @@
 package com.example.ui.screens
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,13 +24,19 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Checklist
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.DeleteSweep
+import androidx.compose.material.icons.rounded.DriveFileRenameOutline
 import androidx.compose.material.icons.rounded.Error
+import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.RadioButtonUnchecked
 import androidx.compose.material.icons.rounded.RestoreFromTrash
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.SelectAll
 import androidx.compose.material.icons.rounded.StarOutline
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.AlertDialog
@@ -383,72 +391,244 @@ fun FavoritesScreen(
 // -----------------------------------------------------------------------------
 // 4. RECENT FILES SCREEN
 // -----------------------------------------------------------------------------
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun RecentFilesScreen(
     recentFiles: List<RecentFileEntity>,
+    recentModifiedFiles: List<StorageItem>,
     onOpenRecent: (StorageItem) -> Unit,
     onShareRecent: (StorageItem) -> Unit,
+    onRenameItem: (StorageItem) -> Unit,
+    onBatchRename: (List<StorageItem>) -> Unit,
+    onDeleteItems: (List<StorageItem>) -> Unit,
     onRemoveRecent: (String) -> Unit,
+    onScanStorage: () -> Unit,
     onBack: () -> Unit
 ) {
+    var filterTab by remember { mutableStateOf(0) } // 0 = All, 1 = Opened/Edited, 2 = Latest on Device
+    var selectMode by remember { mutableStateOf(false) }
+    val selectedMap = remember { mutableStateMapOf<String, StorageItem>() }
+
+    val openedItems = remember(recentFiles) {
+        recentFiles.map { entry ->
+            StorageItem(
+                pathOrUri = entry.pathOrUri,
+                name = entry.name,
+                parentPathOrUri = entry.parentPathOrUri,
+                isDirectory = entry.isDirectory,
+                isSafUri = entry.isSafUri,
+                size = entry.size,
+                lastModified = entry.lastModified,
+                extension = entry.extension,
+                mimeType = entry.mimeType
+            ) to "${entry.actionLabel} • ${FormatUtils.formatShortDate(entry.timestamp)}"
+        }
+    }
+
+    val combinedItems = remember(filterTab, openedItems, recentModifiedFiles) {
+        when (filterTab) {
+            1 -> openedItems
+            2 -> recentModifiedFiles.map { it to "Modified • ${FormatUtils.formatShortDate(it.lastModified)}" }
+            else -> {
+                val seen = HashSet<String>()
+                val merged = mutableListOf<Pair<StorageItem, String>>()
+                openedItems.forEach { pair ->
+                    if (seen.add(pair.first.pathOrUri)) merged.add(pair)
+                }
+                recentModifiedFiles.forEach { item ->
+                    if (seen.add(item.pathOrUri)) {
+                        merged.add(item to "Modified • ${FormatUtils.formatShortDate(item.lastModified)}")
+                    }
+                }
+                merged
+            }
+        }
+    }
+
+    val isSelecting = selectMode || selectedMap.isNotEmpty()
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") } },
-                title = { Text("Recent Files (${recentFiles.size})") }
-            )
+            if (isSelecting) {
+                TopAppBar(
+                    navigationIcon = {
+                        IconButton(onClick = {
+                            selectMode = false
+                            selectedMap.clear()
+                        }) {
+                            Icon(Icons.Rounded.Close, "Cancel selection")
+                        }
+                    },
+                    title = { Text("${selectedMap.size} selected") },
+                    actions = {
+                        IconButton(onClick = {
+                            combinedItems.forEach { (item, _) -> selectedMap[item.pathOrUri] = item }
+                        }) {
+                            Icon(Icons.Rounded.SelectAll, "Select all")
+                        }
+                        if (selectedMap.isNotEmpty()) {
+                            IconButton(onClick = {
+                                val list = selectedMap.values.toList()
+                                selectMode = false
+                                selectedMap.clear()
+                                if (list.size == 1) onRenameItem(list.first()) else onBatchRename(list)
+                            }) {
+                                Icon(Icons.Rounded.DriveFileRenameOutline, "Rename selected")
+                            }
+                            IconButton(onClick = {
+                                val list = selectedMap.values.toList()
+                                selectMode = false
+                                selectedMap.clear()
+                                onDeleteItems(list)
+                            }) {
+                                Icon(Icons.Rounded.Delete, "Delete selected", tint = MaterialTheme.colorScheme.error)
+                            }
+                        }
+                    }
+                )
+            } else {
+                TopAppBar(
+                    navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") } },
+                    title = { Text("Recent Files (${combinedItems.size})") },
+                    actions = {
+                        if (combinedItems.isNotEmpty()) {
+                            IconButton(onClick = { selectMode = true }) {
+                                Icon(Icons.Rounded.Checklist, "Select multiple")
+                            }
+                        }
+                    }
+                )
+            }
         }
     ) { innerPadding ->
-        if (recentFiles.isEmpty()) {
-            Box(Modifier.fillMaxSize().padding(innerPadding).padding(24.dp), contentAlignment = Alignment.Center) {
-                Text("No recent files recorded yet.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(innerPadding),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(recentFiles, key = { it.pathOrUri }) { entry ->
-                    val item = StorageItem(
-                        pathOrUri = entry.pathOrUri,
-                        name = entry.name,
-                        parentPathOrUri = entry.parentPathOrUri,
-                        isDirectory = entry.isDirectory,
-                        isSafUri = entry.isSafUri,
-                        size = entry.size,
-                        lastModified = entry.lastModified,
-                        extension = entry.extension,
-                        mimeType = entry.mimeType
-                    )
-                    var menuOpen by remember { mutableStateOf(false) }
+                FilterChip(
+                    selected = filterTab == 0,
+                    onClick = { filterTab = 0 },
+                    label = { Text("All Recent") }
+                )
+                FilterChip(
+                    selected = filterTab == 1,
+                    onClick = { filterTab = 1 },
+                    label = { Text("Opened & Edited (${recentFiles.size})") }
+                )
+                FilterChip(
+                    selected = filterTab == 2,
+                    onClick = { filterTab = 2 },
+                    label = { Text("Device Latest (${recentModifiedFiles.size})") }
+                )
+            }
 
-                    Surface(
-                        shape = RoundedCornerShape(14.dp),
-                        color = MaterialTheme.colorScheme.surface,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(14.dp))
-                            .clickable { onOpenRecent(item) }
+            if (combinedItems.isEmpty()) {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .padding(24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                            FileTypeIconBadge(item = item, size = 44.dp)
-                            Spacer(Modifier.width(12.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(entry.name, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                Text(
-                                    "${entry.actionLabel} • ${FormatUtils.formatBytes(entry.size)} • ${FormatUtils.formatShortDate(entry.timestamp)}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                        Icon(
+                            Icons.Rounded.History,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(48.dp)
+                        )
+                        Text("No recent files yet", style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            "Open files or scan your device storage to see your latest files here.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Button(onClick = onScanStorage) { Text("Scan Storage") }
+                    }
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(combinedItems, key = { it.first.pathOrUri }) { (item, subLabel) ->
+                        var menuOpen by remember { mutableStateOf(false) }
+                        val isSelected = item.pathOrUri in selectedMap
+                        val isInOpenedTable = recentFiles.any { it.pathOrUri == item.pathOrUri }
+
+                        Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f) else MaterialTheme.colorScheme.surface,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(
+                                    width = if (isSelected) 1.5.dp else 1.dp,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                                    shape = RoundedCornerShape(14.dp)
                                 )
-                            }
-                            Box {
-                                IconButton(onClick = { menuOpen = true }) { Icon(Icons.Rounded.MoreVert, "Recent actions") }
-                                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                                    DropdownMenuItem(text = { Text("Open") }, onClick = { menuOpen = false; onOpenRecent(item) })
-                                    DropdownMenuItem(text = { Text("Share") }, onClick = { menuOpen = false; onShareRecent(item) })
-                                    DropdownMenuItem(text = { Text("Remove from Recent") }, onClick = { menuOpen = false; onRemoveRecent(entry.pathOrUri) })
+                                .combinedClickable(
+                                    onClick = {
+                                        if (isSelecting) {
+                                            if (isSelected) selectedMap.remove(item.pathOrUri) else selectedMap[item.pathOrUri] = item
+                                        } else {
+                                            onOpenRecent(item)
+                                        }
+                                    },
+                                    onLongClick = {
+                                        if (isSelected) selectedMap.remove(item.pathOrUri) else selectedMap[item.pathOrUri] = item
+                                    }
+                                )
+                        ) {
+                            Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                FileTypeIconBadge(item = item, size = 44.dp)
+                                Spacer(Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(item.name, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                    Text(
+                                        "$subLabel • ${FormatUtils.formatBytes(item.size)}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                                if (isSelecting) {
+                                    IconButton(onClick = {
+                                        if (isSelected) selectedMap.remove(item.pathOrUri) else selectedMap[item.pathOrUri] = item
+                                    }) {
+                                        Icon(
+                                            imageVector = if (isSelected) Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked,
+                                            contentDescription = "Select",
+                                            tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                } else {
+                                    Box {
+                                        IconButton(onClick = { menuOpen = true }) { Icon(Icons.Rounded.MoreVert, "Recent actions") }
+                                        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                                            DropdownMenuItem(text = { Text("Open") }, onClick = { menuOpen = false; onOpenRecent(item) })
+                                            DropdownMenuItem(text = { Text("Rename") }, onClick = { menuOpen = false; onRenameItem(item) })
+                                            DropdownMenuItem(text = { Text("Share") }, onClick = { menuOpen = false; onShareRecent(item) })
+                                            if (isInOpenedTable) {
+                                                DropdownMenuItem(text = { Text("Remove from Recent") }, onClick = { menuOpen = false; onRemoveRecent(item.pathOrUri) })
+                                            }
+                                            DropdownMenuItem(
+                                                text = { Text("Delete", color = MaterialTheme.colorScheme.error) },
+                                                onClick = { menuOpen = false; onDeleteItems(listOf(item)) }
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }

@@ -66,6 +66,9 @@ interface FileIndexDao {
     @Query("SELECT * FROM recent_files ORDER BY timestamp DESC LIMIT 50")
     fun observeRecentFiles(): Flow<List<RecentFileEntity>>
 
+    @Query("SELECT * FROM indexed_files WHERE isDirectory = 0 AND (:includeHidden = 1 OR isHidden = 0) ORDER BY lastModified DESC LIMIT 100")
+    fun observeRecentlyModifiedFiles(includeHidden: Boolean): Flow<List<IndexedFileEntity>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertRecentFile(entry: RecentFileEntity)
 
