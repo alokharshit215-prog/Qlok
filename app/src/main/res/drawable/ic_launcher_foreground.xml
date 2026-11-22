@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Subtle shadow layer under folder -->
+    <path
+        android:fillColor="#26000000"
+        android:pathData="M31,37 L46,37 L51,42 L77,42 C80.3,42 83,44.7 83,48 L83,74 C83,77.3 80.3,80 77,80 L31,80 C27.7,80 25,77.3 25,74 L25,43 C25,39.7 27.7,37 31,37 Z" />
+    <!-- Back folder tab in soft light blue -->
+    <path
+        android:fillColor="#BBDEFB"
+        android:pathData="M31,34 L45.5,34 C47.1,34 48.6,34.7 49.6,35.9 L53,40 L77,40 C80.3,40 83,42.7 83,46 L83,52 L25,52 L25,40 C25,36.7 27.7,34 31,34 Z" />
+    <!-- Crisp inner document peeking out -->
+    <path
+        android:fillColor="#E3F2FD"
+        android:pathData="M33,42 L75,42 C76.7,42 78,43.3 78,45 L78,56 L30,56 L30,45 C30,43.3 31.3,42 33,42 Z" />
+    <!-- Main front folder body in pure white -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M25,49 L83,49 L83,72 C83,75.3 80.3,78 77,78 L31,78 C27.7,78 25,75.3 25,72 Z" />
+    <!-- Clean code/file accent bars on folder face -->
+    <path
+        android:fillColor="#1976D2"
+        android:pathData="M34,58 L58,58 C59.1,58 60,58.9 60,60 C60,61.1 59.1,62 58,62 L34,62 C32.9,62 32,61.1 32,60 C32,58.9 32.9,58 34,58 Z" />
+    <path
+        android:fillColor="#64B5F6"
+        android:pathData="M34,66 L49,66 C50.1,66 51,66.9 51,68 C51,69.1 50.1,70 49,70 L34,70 C32.9,70 32,69.1 32,68 C32,66.9 32.9,66 34,66 Z" />
+</vector>

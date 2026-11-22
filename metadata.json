@@ -1,0 +1,6 @@
+{
+  "name": "Blue File Manager",
+  "description": "Real Android file manager with recursive storage scanner, built-in code editor, ZIP archive tools, media players, storage analyzer, recycle bin, and FTP network client. Made by Alok.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

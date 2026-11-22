@@ -1,0 +1,2177 @@
+Create a complete, real, production-ready Android file manager application named “Blue File Manager”.
+
+IMPORTANT: This must be a REAL FUNCTIONAL ANDROID APK, NOT a static UI mockup, demo, clickable prototype, fake interface, or screenshot recreation. Every button, menu, file operation, folder operation, editor, scanner, viewer, storage analyzer, ZIP feature, sharing feature, and setting must actually work on a real Android device.
+
+The application branding should be:
+
+Blue File Manager
+Made by Alok
+
+Do not require screenshots or external design references. Build the complete application from this specification alone.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. TECHNOLOGY REQUIREMENTS
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Build the application using modern Android development practices.
+
+Preferred stack:
+
+- Kotlin
+- Jetpack Compose
+- Material 3
+- AndroidX
+- Kotlin Coroutines
+- Room/local database where appropriate
+- Storage Access Framework
+- MediaStore where appropriate
+- Android native file/document APIs
+- Android 11 through Android 15+ compatibility
+- Responsive layouts for phones and tablets
+
+The final project must:
+
+- Compile successfully
+- Install successfully
+- Launch successfully
+- Work on a real Android device
+- Perform real filesystem operations
+- Not contain fake/demo data
+- Not use fake buttons
+- Not use placeholder functionality
+- Not simulate file operations
+- Not claim an operation succeeded unless it actually succeeded
+
+If a feature cannot be supported on a particular Android version because of Android security restrictions, handle it honestly and gracefully instead of bypassing Android security.
+
+Never use root exploits, security bypasses, hidden APIs, or illegal methods to access protected folders.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2. APP NAME AND BRANDING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+App name:
+Blue File Manager
+
+Brand:
+Made by Alok
+
+Use “Made by Alok” subtly:
+
+- Splash screen
+- About screen
+- Settings/About section
+
+Do NOT put “Made by Alok” everywhere in the interface.
+
+The branding should look professional and unobtrusive.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+3. DESIGN SYSTEM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Use a modern blue-and-white Material 3 design.
+
+Primary colors:
+
+- Primary Blue: #1976D2
+- Bright Blue: #2196F3
+- Dark Blue: #0D47A1
+- Light Blue: #E3F2FD
+- Background: #F7F9FC
+
+Use:
+
+- Rounded cards
+- Rounded buttons
+- Material 3 components
+- Clean spacing
+- Modern icons
+- Smooth animations
+- Clear typography
+- Good contrast
+- Responsive layouts
+- Light mode
+- Dark mode
+- System theme option
+
+The interface should feel like a professional modern file manager.
+
+Do not make the UI overly complicated.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+4. SPLASH SCREEN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Create a professional splash screen containing:
+
+- Blue File Manager logo/icon
+- App name
+- Small “Made by Alok” branding
+- Smooth entrance animation
+
+After splash screen, open the Home screen.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+5. MAIN NAVIGATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Use bottom navigation with:
+
+1. Home
+2. Files
+3. Storage
+4. Cloud
+5. Settings
+
+Each section must be functional.
+
+Use appropriate Material icons.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+6. HOME DASHBOARD
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Home screen should show:
+
+- Greeting/title
+- Storage overview
+- Total storage
+- Used storage
+- Free storage
+- Visual storage progress indicator
+- Storage percentage
+
+Category cards:
+
+- Images
+- Videos
+- Audio
+- Documents
+- Downloads
+- APK
+- Archives
+- Other
+
+Each category must open a real filtered file list.
+
+Include:
+
+Analyze Storage
+
+When clicked, perform a real storage analysis.
+
+Also show:
+
+Recent Files
+
+Display recently opened/created/modified files.
+
+Favorites
+
+Display files and folders marked as favorites.
+
+Quick Actions
+
+Include:
+
+- New Folder
+- New File
+- New Code File
+- Scan Storage
+- Refresh
+- Recent
+- Favorites
+- ZIP/Create Archive
+
+All actions must be functional.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+7. STORAGE ACCESS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+In Settings and where appropriate in the app, provide:
+
+Storage Access
+
+Button:
+GRANT STORAGE ACCESS
+
+Use official Android storage access mechanisms.
+
+Do not request dangerous or unnecessary permissions.
+
+After access is granted, show:
+
+SCAN STORAGE
+
+The scan must recursively discover all files and folders that Android officially allows the application to access.
+
+Do NOT hardcode only:
+
+- Download
+- DCIM
+- Pictures
+
+Instead dynamically discover accessible storage locations and folders.
+
+Common folders may include:
+
+- Android
+- DCIM
+- Download
+- Documents
+- Movies
+- Music
+- Pictures
+- Ringtones
+- Notifications
+- Alarms
+- Backups
+- WhatsApp
+- Telegram
+- APK folders
+- Archives
+- User-created folders
+- Other accessible folders
+
+These are examples only. The scanner must dynamically discover actual accessible folders.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+8. ANDROID PROTECTED FOLDERS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Respect Android restrictions.
+
+For example, Android may restrict access to:
+
+- Android/data
+- Android/obb
+- Other protected locations
+
+Never bypass these restrictions.
+
+If an area is inaccessible:
+
+- Show it as protected/inaccessible where appropriate
+- Explain that Android does not allow access
+- Do not pretend the files were scanned
+- Do not crash
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+9. FILE INDEX DATABASE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Create a local database/index for discovered files and folders.
+
+Store information such as:
+
+- File name
+- URI/path
+- Parent folder
+- Extension
+- MIME type
+- Size
+- Modified date
+- Created date when available
+- Hidden status
+- File category
+- Folder/file type
+- Favorite status
+- Last opened time where appropriate
+
+The index must remain local.
+
+Never upload the user's files or file index to a server unless the user explicitly initiates a supported cloud/share operation.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+10. STORAGE SCANNING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement a real background scanner.
+
+Features:
+
+- Recursive scanning
+- Progress indicator
+- Current folder being scanned
+- Files scanned count
+- Folders scanned count
+- Error count
+- Last scan time
+- Cancel scan
+- Resume/retry where practical
+- Background execution
+- No UI freezing
+
+After scanning:
+
+- Update database
+- Update storage statistics
+- Update categories
+- Update recent files
+- Update folder listings
+
+Do not scan on the main UI thread.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+11. REFRESH AND AUTO REFRESH
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Provide:
+
+- Refresh
+- Scan Storage
+- Auto Refresh
+
+Settings should show:
+
+- Last scan
+- Indexed files
+- Indexed folders
+
+Provide:
+Clear File Index
+
+IMPORTANT:
+Clearing the index must NOT delete the user's real files.
+
+It should only remove the app's local index/database entries.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+12. FILE BROWSER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The Files section must provide a real file browser.
+
+Support:
+
+- Folder navigation
+- Breadcrumb navigation
+- Back navigation
+- Grid view
+- List view
+- Sorting
+- Search
+- Multi-select
+- File actions
+- Folder actions
+
+Sorting:
+
+- Name A-Z
+- Name Z-A
+- Date newest
+- Date oldest
+- Size largest
+- Size smallest
+- Type
+
+Allow users to create folders directly inside the currently opened folder.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+13. CREATE FOLDER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Provide:
+
+New Folder
+
+When clicked:
+
+- Show dialog
+- Ask for folder name
+- Validate name
+- Prevent invalid names
+- Prevent illegal characters
+- Prevent accidental duplicate conflicts
+- Create a REAL folder on accessible Android storage
+- Do not create only a database entry
+
+After creation:
+
+- Refresh current folder
+- Add folder to index
+- Show success message
+
+Example:
+
+User opens:
+Documents/MyProject
+
+Then selects:
+New Folder
+
+Creates:
+Documents/MyProject/TestFolder
+
+The folder must actually exist in Android storage.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+14. CREATE FILE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Provide:
+
+New File
+
+User should be able to:
+
+- Enter filename
+- Choose current folder as destination
+- Create an actual file
+
+Examples:
+
+- notes.txt
+- test.json
+- data.csv
+- config.ini
+
+The file must be a REAL file on accessible Android storage.
+
+After creation, automatically open the editor for supported text/code file types where appropriate.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+15. CREATE CODE FILE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Provide:
+
+New Code File
+
+Allow users to create files such as:
+
+- main.py
+- main.java
+- Main.kt
+- index.html
+- style.css
+- script.js
+- app.cpp
+- main.c
+- config.json
+- data.xml
+- query.sql
+- script.sh
+- README.md
+- config.yaml
+- config.yml
+- file.php
+- test.txt
+- app.log
+- file.ini
+- file.conf
+
+User flow:
+
+1. Open desired folder
+2. Tap New Code File
+3. Enter filename
+4. Choose/create file
+5. Open editor
+6. User types code
+7. User presses Save
+8. File is written to the selected folder
+9. File appears in the file manager
+10. File is indexed
+
+This must be real filesystem behavior.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+16. TEXT/CODE EDITOR
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Build a functional built-in text/code editor.
+
+Supported formats should include, where practical:
+
+TXT
+LOG
+JSON
+XML
+CSV
+MD
+INI
+CONF
+HTML
+CSS
+JavaScript
+TypeScript
+Python
+Java
+Kotlin
+C
+C++
+H
+HPP
+PHP
+SQL
+Shell
+YAML
+YML
+and other plain-text/code formats.
+
+Editor features:
+
+- Type text/code
+- Edit
+- Undo
+- Redo
+- Select all
+- Copy
+- Cut
+- Paste
+- Find
+- Find and Replace
+- Go to Line
+- Line numbers
+- Syntax highlighting where practical
+- Word wrap
+- Font size
+- Dark editor
+- Auto-save
+- Save
+- Save As
+- Save Copy
+
+The editor must actually read and write the real file.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+17. WRITE CODE AND SAVE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+A user must be able to:
+
+Open a folder
+
+Tap:
+New Code File
+
+Enter:
+main.py
+
+Open editor
+
+Type:
+
+print("Hello World")
+
+Press:
+Save
+
+The app must create/write:
+
+main.py
+
+inside the selected real Android folder.
+
+The content must persist after:
+
+- Closing editor
+- Closing app
+- Restarting app
+
+Opening main.py later must show the saved content.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+18. SAVE AS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement:
+
+Save As
+
+Allow user to:
+
+- Select destination folder
+- Enter filename
+- Save actual file
+
+If the destination already contains the same filename, show:
+
+- Replace
+- Keep Both
+- Cancel
+
+Keep Both should create a unique filename such as:
+
+file (1).txt
+
+or:
+
+file (2).txt
+
+Do not silently overwrite existing files.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+19. SAVE COPY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement:
+
+Save a Copy
+
+The original file must remain unchanged.
+
+User selects:
+
+- Destination folder
+- Filename
+
+Then create a real copy.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+20. UNSAVED CHANGES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+If the user edits a file and attempts to exit without saving, show:
+
+Unsaved Changes
+
+Options:
+
+- Save & Exit
+- Discard
+- Cancel
+
+Never silently lose edits.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+21. AUTO SAVE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Optional setting:
+
+Auto Save:
+
+- Off
+- 30 seconds
+- 1 minute
+- 5 minutes
+
+Auto-save must not corrupt the original file.
+
+Use safe temporary/draft storage and recovery where practical.
+
+If the app crashes during editing, provide recovery of unsaved work where possible.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+22. CREATE FILE INSIDE FOLDER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The current folder must automatically become the destination.
+
+Example:
+
+User opens:
+Projects/Python
+
+Taps:
+New Code File
+
+Creates:
+Projects/Python/main.py
+
+Do not force the user to navigate from the root again.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+23. MOVE FILE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement real:
+
+Move
+
+User selects a file or folder.
+
+Then:
+
+- Select destination folder
+- Confirm
+- Move actual filesystem item
+- Update index
+- Refresh UI
+
+Example:
+
+Download/photo.jpg
+
+Move to:
+
+Pictures/photo.jpg
+
+The actual file must move.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+24. COPY FILE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement real:
+
+Copy
+
+User selects file.
+
+Then:
+
+- Select destination folder
+- Copy actual file
+- Keep original
+- Update index
+- Refresh destination
+
+Example:
+
+Documents/test.txt
+
+Copy to:
+
+Backup/test.txt
+
+Both files must exist afterward.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+25. COPY/CUT/PASTE CLIPBOARD
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement file-manager clipboard.
+
+Actions:
+
+- Copy
+- Cut
+- Paste
+
+When user selects:
+Copy
+
+store selected file/folder references.
+
+When user selects:
+Cut
+
+store them as movable items.
+
+When user enters another folder, show:
+
+Paste
+
+Paste must perform the actual operation.
+
+The UI should clearly indicate whether the clipboard contains:
+
+- Copy items
+- Cut items
+
+After a successful Cut + Paste, remove the original.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+26. MULTI-SELECT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Allow selecting multiple files/folders.
+
+Actions:
+
+- Copy
+- Cut
+- Move
+- Delete
+- Share
+- ZIP
+- Rename where supported
+- Add to Favorites
+
+Operations must work on all selected items.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+27. FOLDER COPY AND MOVE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Copying or moving a folder must recursively handle accessible contents.
+
+Example:
+
+Project/
+
+contains:
+
+- main.py
+- src/
+- assets/
+- README.md
+
+Copying Project must copy the complete accessible directory tree.
+
+Respect Android permissions.
+
+Show progress.
+
+Handle failures safely.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+28. FILE CONFLICT HANDLING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+When copying/moving and the destination already contains a matching item, show:
+
+- Replace
+- Keep Both
+- Skip
+- Cancel
+
+Also provide:
+Apply to all
+
+Keep Both examples:
+
+photo.jpg
+photo (1).jpg
+photo (2).jpg
+
+Do not overwrite files without user confirmation.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+29. PROGRESS SYSTEM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+For large operations show:
+
+- Progress bar
+- Current filename
+- Files completed
+- Total files where known
+- Current operation
+- Cancel button where safe
+
+Operations include:
+
+- Copy
+- Move
+- Delete
+- ZIP
+- Extract
+- Scan
+- Batch operations
+
+Never freeze the interface.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+30. FILE ACTION MENU
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+For a file, provide context menu:
+
+- Open
+- Open With
+- Edit
+- Share
+- Copy
+- Cut
+- Paste where applicable
+- Move
+- Rename
+- Duplicate
+- Save a Copy
+- Properties
+- Add to Favorites
+- Delete
+- Create ZIP where applicable
+
+For folders:
+
+- Open
+- Copy
+- Cut
+- Paste where applicable
+- Move
+- Rename
+- Duplicate/copy
+- Share where supported
+- Properties
+- Add to Favorites
+- Create ZIP
+- Delete
+
+Actions should be context-aware.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+31. OPEN FILE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+When the user taps a file:
+
+If supported:
+Open using built-in viewer/editor.
+
+Otherwise:
+Use Android native:
+
+Open With
+
+chooser.
+
+Use the real Android Intent system.
+
+Do not fake external apps.
+
+Support:
+
+- Just Once
+- Always
+
+where Android provides these choices.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+32. IMAGE VIEWER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Support:
+
+- JPG
+- JPEG
+- PNG
+- WEBP
+- GIF where practical
+
+Features:
+
+- Zoom
+- Pan
+- Rotate
+- Crop where practical
+- Share
+- Rename
+- Delete
+- Save
+- Properties
+
+Use actual image files.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+33. VIDEO PLAYER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement real video playback.
+
+Features:
+
+- Play
+- Pause
+- Seek
+- Volume
+- Fullscreen
+- Duration
+- Progress bar
+- Share
+- Rename
+- Delete
+- File information
+
+Use Android-compatible media playback technology.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+34. AUDIO PLAYER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement audio playback.
+
+Features:
+
+- Play
+- Pause
+- Previous
+- Next
+- Seek
+- Volume
+- Duration
+- Progress
+- File information
+- Share
+- Rename
+- Delete
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+35. PDF VIEWER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Provide PDF viewer support where practical.
+
+Features:
+
+- Page navigation
+- Zoom
+- Search
+- Share
+- Rename
+- Save Copy
+- Properties
+
+If built-in PDF rendering is not available/reliable, use Android Open With fallback.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+36. FILE PROPERTIES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Show:
+
+For files:
+
+- Name
+- Full path/URI
+- Size
+- Type
+- MIME type
+- Extension
+- Created date if available
+- Modified date
+- Readable
+- Writable
+- Location
+
+For folders:
+
+- Folder name
+- Path/URI
+- Number of files
+- Number of folders
+- Total size where practical
+- Modified date where available
+
+Actions:
+
+- Rename
+- Share
+- Copy Path
+- Open Location
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+37. COPY PATH
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Provide:
+
+Copy Path
+
+Copy the actual filesystem path or URI, depending on Android storage mechanism.
+
+Do not copy fake/internal database paths.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+38. RENAME
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement real rename for files and folders.
+
+Validate:
+
+- Empty name
+- Invalid characters
+- Duplicate names
+- Extension changes
+
+If a user intentionally changes a file extension, warn:
+
+Changing the extension may make the file unusable. Continue?
+
+Options:
+
+- Continue
+- Cancel
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+39. DUPLICATE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement:
+
+Duplicate
+
+Create an actual copy in the same folder.
+
+Example:
+
+main.py
+
+becomes:
+
+main (1).py
+
+Do not overwrite the original.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+40. BATCH RENAME
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement batch rename for multiple files.
+
+Options:
+
+- Add prefix
+- Add suffix
+- Replace text
+- Number files
+- Find and replace
+
+Provide preview before applying.
+
+Example:
+
+photo.jpg
+photo2.jpg
+photo3.jpg
+
+Can become:
+
+Trip_001.jpg
+Trip_002.jpg
+Trip_003.jpg
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+41. DELETE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement real deletion.
+
+Before deleting, show confirmation.
+
+For supported locations, preferably move deleted items to the app's Recycle Bin instead of immediate permanent deletion.
+
+If the app cannot safely move an item to Recycle Bin because of Android restrictions, clearly inform the user before permanent deletion.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+42. RECYCLE BIN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Provide:
+
+Recycle Bin
+
+Features:
+
+- Deleted files
+- Deleted folders
+- Restore
+- Permanent Delete
+- Empty Recycle Bin
+
+Restore must return the item to its original location where possible.
+
+If original location is no longer available, allow user to choose another destination where practical.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+43. RECENT FILES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Show recently:
+
+- Opened
+- Created
+- Edited
+- Modified
+
+Allow:
+
+- Open
+- Share
+- Remove from Recent
+
+Do not delete the actual file when removing it from Recent.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+44. FAVORITES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Allow users to mark:
+
+- Files
+- Folders
+
+as Favorites.
+
+Favorites screen should show them.
+
+Actions:
+
+- Open
+- Remove Favorite
+- Rename
+- Share
+- Properties
+
+If a favorite file no longer exists, show it as unavailable and provide cleanup.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+45. SEARCH
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement real file search.
+
+Search by:
+
+- Filename
+- Extension
+- Type/category
+
+Where practical:
+
+- Search current folder
+- Search all indexed storage
+
+Results should show:
+
+- Name
+- Type
+- Size
+- Location
+- Modified date
+
+Tap result to open.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+46. STORAGE ANALYZER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Storage screen must show:
+
+- Total storage
+- Used storage
+- Free storage
+- Usage percentage
+
+Categories:
+
+- Images
+- Videos
+- Audio
+- Documents
+- Downloads
+- APK
+- Archives
+- Other
+
+Show category sizes.
+
+Allow category tap to view actual files.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+47. LARGE FILES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Storage Analyzer should identify large files.
+
+Default threshold:
+10 MB
+
+Allow configurable threshold.
+
+Show:
+
+- File name
+- Size
+- Location
+- Modified date
+
+Actions:
+
+- Open
+- Share
+- Move
+- Delete
+- Properties
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+48. ARCHIVE / ZIP SUPPORT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement real ZIP support.
+
+Create ZIP:
+
+- Select one or more files
+- Select one or more folders
+- Choose destination
+- Enter ZIP filename
+- Compression level where practical
+- Create actual .zip file
+- Do not delete originals
+
+ZIP actions:
+
+- Open ZIP
+- Browse contents
+- Extract Here
+- Extract To
+- Extract selected items
+- Add files/folders
+- Remove items from archive
+- Rename archive entries where supported
+
+Do not require extracting the entire ZIP just to browse its contents.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+49. PASSWORD-PROTECTED ARCHIVES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+If an archive is password protected:
+
+- Ask for password
+- Do not bypass password
+- Do not attempt cracking
+- Show clear error if password is wrong
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+50. SAFE ARCHIVE EXTRACTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Protect against archive path traversal and destination escape.
+
+Never allow an archive to extract files outside the selected destination through malicious paths such as:
+
+../../file
+
+Sanitize archive paths.
+
+Handle corrupted archives safely.
+
+Show useful error messages.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+51. SHARING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Implement real Android sharing.
+
+Use Android's official share sheet.
+
+Support available installed apps such as:
+
+- WhatsApp
+- Gmail
+- Bluetooth
+- Quick Share
+- Other compatible apps
+
+Do not create fake sharing screens.
+
+Multiple selected files should be shareable where supported.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+52. CLOUD AND NETWORK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Create Cloud section.
+
+Possible services:
+
+- Google Drive
+- Dropbox
+- OneDrive
+- Box
+- NAS
+- FTP
+- SMB
+
+Provide:
+Add Connection
+
+IMPORTANT:
+Do not create fake cloud functionality.
+
+Only implement services using real APIs/authentication/protocol support.
+
+If a service is not implemented, clearly label it:
+Coming Soon
+
+Do not pretend a file has been uploaded when it has not.
+
+Cloud/network functionality must only run after explicit user action.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+53. PRIVACY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The app must prioritize privacy.
+
+Rules:
+
+- No silent file uploads
+- No automatic cloud backup
+- No hidden network transmission
+- No selling/sharing file information
+- Local file index by default
+- Explicit permission for storage access
+- Explicit action for sharing/cloud upload
+
+Do not collect unnecessary personal information.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+54. SETTINGS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Settings screen should contain:
+
+STORAGE
+
+- Storage Access
+- Grant Storage Access
+- Scan Storage
+- Refresh
+- Auto Refresh
+- Last Scan
+- Indexed Files
+- Indexed Folders
+- Clear File Index
+- Hidden Files
+
+APPEARANCE
+
+- Light
+- Dark
+- System Default
+- Blue Theme
+
+FILE BROWSER
+
+- Grid/List
+- Default Sort
+- Sort Direction
+- Show Hidden Files
+
+EDITOR
+
+- Font Size
+- Word Wrap
+- Line Numbers
+- Syntax Highlighting
+- Dark Editor
+- Auto Save
+
+RECYCLE BIN
+
+- Enable/Disable
+- Auto cleanup where supported
+
+SECURITY
+
+- App Lock
+- PIN
+- Biometric unlock where supported
+
+NOTIFICATIONS
+
+- Scan notifications
+- Long-operation notifications
+
+ABOUT
+
+- Blue File Manager
+- Version
+- Made by Alok
+- Privacy information
+- Open source licenses if applicable
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+55. HIDDEN FILES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Add:
+
+Show Hidden Files
+
+When enabled:
+
+- Show hidden files/folders where Android permits
+- Clearly distinguish hidden files
+
+When disabled:
+
+- Hide them from normal browsing
+
+Do not delete hidden files simply because the option is disabled.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+56. APP LOCK
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+If implemented:
+
+Support:
+
+- PIN
+- Biometric authentication where Android/device supports it
+
+Allow:
+
+- Enable/Disable App Lock
+- Change PIN
+- Use biometric
+
+Do not store PIN as plain text.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+57. QUICK CREATE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Provide a convenient Quick Create menu:
+
++ Create
+
+Options:
+
+- New Folder
+- New File
+- New Text File
+- New Code File
+- Create ZIP
+
+The destination should default to the currently opened folder.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+58. FILE CREATION WORKFLOW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The complete workflow must work like this:
+
+Open Files.
+
+Navigate to:
+
+Documents/MyProject
+
+Tap:
+
+New File
+
+Enter:
+
+notes.txt
+
+Create.
+
+The actual file must appear in:
+
+Documents/MyProject/notes.txt
+
+Open it.
+
+Type:
+
+Hello World
+
+Tap:
+
+Save
+
+Close it.
+
+Reopen it.
+
+The text must still exist.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+59. CODE FILE WORKFLOW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Example:
+
+Open:
+
+Documents/Projects/Python
+
+Tap:
+
+New Code File
+
+Enter:
+
+main.py
+
+Editor opens.
+
+User types:
+
+print("Hello World")
+
+Tap Save.
+
+The app must actually create:
+
+Documents/Projects/Python/main.py
+
+with that content.
+
+The file must remain available after restarting the app.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+60. MOVE WORKFLOW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Example:
+
+Download/test.txt
+
+Select:
+Move
+
+Choose:
+Documents
+
+Tap:
+Paste/Move Here
+
+Result:
+
+Documents/test.txt
+
+Original:
+Download/test.txt
+
+must no longer exist after successful move.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+61. COPY WORKFLOW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Example:
+
+Documents/test.txt
+
+Select:
+Copy
+
+Open:
+Backup
+
+Select:
+Paste
+
+Result:
+
+Documents/test.txt
+
+and
+
+Backup/test.txt
+
+must both exist.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+62. DRAG AND DROP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Where practical, support drag-and-drop file operations on:
+
+- Tablets
+- Large screens
+- Desktop-style Android environments
+
+Dragging a file onto a folder should allow:
+
+- Move
+- Copy
+
+Never perform a destructive operation without appropriate confirmation where needed.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+63. FILE OPERATION HISTORY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Create:
+
+Recent Operations
+
+Record operations such as:
+
+- Create
+- Rename
+- Copy
+- Move
+- Delete
+- Restore
+- Edit
+- ZIP
+- Extract
+
+Show:
+
+- Operation
+- Filename
+- Time
+- Success/failure
+
+Do not store unnecessary sensitive file contents.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+64. ERROR HANDLING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Handle:
+
+- Permission denied
+- File not found
+- Folder not found
+- File already exists
+- Storage full
+- Read-only location
+- Protected Android directory
+- Invalid filename
+- Corrupted file
+- Corrupted ZIP
+- Unsupported format
+- Interrupted operation
+- Network failure
+- Cloud authentication failure
+
+Show user-friendly messages.
+
+Never crash because one file cannot be accessed during a scan.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+65. PERFORMANCE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The application must work efficiently with thousands or tens of thousands of files where Android permits.
+
+Requirements:
+
+- Background scanning
+- Coroutines
+- Paging/lazy lists where appropriate
+- Database indexing
+- Efficient file metadata loading
+- Async file operations
+- Progress indicators
+- Cancellation
+- No UI freezing
+- Avoid unnecessary rescanning
+- Incremental refresh where practical
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+66. REAL FILESYSTEM REQUIREMENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+This is extremely important:
+
+A file shown in the app must correspond to a real accessible Android file or document.
+
+Creating a file must create the actual file.
+
+Deleting a file must delete/move the actual file.
+
+Moving must move the actual file.
+
+Copying must copy the actual file.
+
+Renaming must rename the actual file.
+
+Saving editor content must write the actual content to the actual file.
+
+Do NOT store fake files only inside Room/database and display them as if they exist.
+
+The database is only an index/cache.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+67. UI STATES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Every major screen must handle:
+
+Loading
+Empty
+Success
+Error
+Permission Required
+No Access
+No Files
+Scanning
+Operation in Progress
+Operation Complete
+
+Example empty state:
+
+“No files found”
+
+with:
+Scan Storage
+
+button.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+68. CONFIRMATION DIALOGS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Use confirmation dialogs for destructive actions.
+
+Delete:
+“Are you sure you want to delete this file?”
+
+Permanent delete:
+“This cannot be undone.”
+
+Extension change:
+“Changing the extension may make the file unusable.”
+
+Unsaved changes:
+“Save your changes before leaving?”
+
+Do not overuse confirmations for harmless operations.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+69. ACCESSIBILITY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Provide:
+
+- Content descriptions
+- Adequate touch targets
+- Good contrast
+- Screen reader support where practical
+- Clear text labels
+- Avoid icon-only actions where ambiguous
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+70. RESPONSIVE DESIGN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Support:
+
+- Small phones
+- Large phones
+- Tablets
+- Different aspect ratios
+- Portrait
+- Landscape
+
+Avoid clipped UI.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+71. DARK MODE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Provide:
+
+- Light mode
+- Dark mode
+- System default
+
+All screens must properly support dark mode.
+
+Do not use unreadable hardcoded colors.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+72. ANIMATIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Use subtle animations:
+
+- Screen transitions
+- Card appearance
+- Dialogs
+- File operations
+- Scan progress
+- FAB/menu expansion
+
+Animations must not reduce performance.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+73. SECURITY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Never:
+
+- Bypass Android security
+- Use root exploits
+- Access protected folders illegally
+- Upload files silently
+- Execute arbitrary downloaded code automatically
+- Open untrusted content without appropriate Android mechanisms
+
+For code files, treat them as text unless the user explicitly opens them using another app.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+74. FILE EXTENSION AND MIME HANDLING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Detect file types using:
+
+- MIME type
+- Extension
+- Android metadata where available
+
+Examples:
+
+Images:
+jpg/jpeg/png/webp/gif
+
+Videos:
+mp4/mkv/webm/avi where supported
+
+Audio:
+mp3/wav/m4a/ogg/flac where supported
+
+Documents:
+pdf/doc/docx/xls/xlsx/ppt/pptx/txt/csv/etc.
+
+Archives:
+zip/7z/tar/gz where supported
+
+Code/text:
+py/js/ts/java/kt/c/cpp/h/hpp/html/css/json/xml/yaml/yml/sql/php/sh/md/etc.
+
+Unsupported files should use Open With.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+75. CATEGORY DETECTION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Automatically categorize files based on MIME/extension.
+
+Categories:
+
+- Images
+- Videos
+- Audio
+- Documents
+- Downloads
+- APK
+- Archives
+- Other
+
+A file should appear in the correct category automatically.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+76. APK FILES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Detect .apk files.
+
+Show:
+
+- APK name
+- Size
+- Version information where safely available
+- Package name where available
+
+Allow:
+
+- Share
+- Copy
+- Move
+- Delete
+- Properties
+- Open With/install through Android's normal package/document mechanisms where appropriate
+
+Do not bypass Android installation security.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+77. FILE/FOLDER FAVORITES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Favorites must persist between app restarts.
+
+Store only the required URI/path/reference and metadata.
+
+If Android URI permissions expire or the file disappears, handle gracefully.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+78. RECENT FILE PERSISTENCE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Recent files should persist after app restart.
+
+Allow user to remove items from Recent without deleting actual files.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+79. DATABASE CONSISTENCY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+After every successful operation:
+
+- Update database
+- Refresh UI
+- Reconcile actual filesystem state
+
+If an operation fails:
+
+- Do not mark it as successful
+- Keep database consistent
+- Show error
+
+Provide periodic reconciliation to detect files changed outside the app.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+80. EXTERNAL FILE CHANGES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+If files are modified using another Android application, the file manager should detect changes when practical.
+
+Support:
+
+- Refresh
+- Rescan
+- Incremental updates
+- Re-index changed items
+
+Do not assume the database is always correct.
+
+The real filesystem is the source of truth.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+81. FINAL USER EXPERIENCE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The complete user experience should be:
+
+Open app
+
+→ Splash Screen
+
+→ Home
+
+→ Grant Storage Access
+
+→ Scan Storage
+
+→ View storage dashboard
+
+→ Browse folders
+
+→ Create folder
+
+→ Open folder
+
+→ Create file
+
+→ Write content/code
+
+→ Save
+
+→ Reopen file
+
+→ Edit
+
+→ Save again
+
+→ Copy file
+
+→ Open another folder
+
+→ Paste
+
+→ Move file
+
+→ Rename file
+
+→ Add to Favorites
+
+→ Share file
+
+→ View Properties
+
+→ Create ZIP
+
+→ Extract ZIP
+
+→ Search files
+
+→ Analyze storage
+
+→ Manage large files
+
+→ Use Recycle Bin
+
+→ Configure Settings
+
+Every step must perform real operations.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+82. FINAL QUALITY REQUIREMENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Before delivering the APK/project, verify all major functions on a real Android environment:
+
+- App launches
+- Navigation works
+- Storage permission/access works
+- Scan works
+- Files appear
+- Folders appear
+- Create Folder works
+- Create File works
+- Create Code File works
+- Text editor works
+- Code editor works
+- Save works
+- Save As works
+- Save Copy works
+- Unsaved changes work
+- Copy works
+- Cut works
+- Paste works
+- Move works
+- Rename works
+- Delete works
+- Restore works
+- Favorites work
+- Recent works
+- Search works
+- Properties work
+- Copy Path works
+- Share works
+- ZIP creation works
+- ZIP browsing works
+- ZIP extraction works
+- Image viewer works
+- Video playback works
+- Audio playback works
+- PDF viewing/fallback works
+- Storage analyzer works
+- Large file detection works
+- Settings work
+- Dark mode works
+- Protected folders are handled correctly
+- Errors are handled gracefully
+- App does not freeze during large operations
+
+Do not mark a feature as completed if it is only a visual placeholder.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+83. BUILD AND DELIVERY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Deliver a complete Android project and a buildable APK.
+
+The APK must be:
+
+- Installable
+- Launchable
+- Functional
+- Stable
+- Production-ready
+
+Use proper:
+
+- Application ID
+- App icon
+- Splash screen
+- Version name
+- Version code
+- Release configuration
+
+Remove debug/mock/test UI from the final production interface.
+
+The final result should look and behave like a real professional Android file manager.
+
+APP NAME:
+Blue File Manager
+
+BRANDING:
+Made by Alok
+
+CORE PURPOSE:
+A complete real Android file manager that allows the user to scan accessible storage, browse folders, create folders, create files, create code files, write and save code, edit files, copy files, cut files, paste files, move files, rename files, delete/restore files, search files, analyze storage, create/extract ZIP archives, share files, view supported media/documents, manage favorites/recent files, and configure the application through Settings.
+
+Again: BUILD THE REAL FUNCTIONAL APPLICATION. DO NOT BUILD A STATIC MOCKUP OR DEMO.
